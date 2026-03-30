@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const dates = getAvailableDates();
+    const dates = await getAvailableDates();
     return NextResponse.json({ dates });
   } catch (error) {
     console.error("Dates API error:", error);

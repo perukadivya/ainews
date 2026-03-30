@@ -10,6 +10,7 @@ import {
 import { formatDateKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get("secret");
@@ -22,8 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const today = formatDateKey(new Date());
 
-    // Check if we already have summaries for today
-    const existing = getDailySummaries(today);
+    const existing = await getDailySummaries(today);
     if (existing.length > 0) {
       return NextResponse.json({
         success: true,
@@ -32,25 +32,20 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get all today's live updates
-    const todayUpdates = getLiveUpdates(today, 100);
+    const todayUpdates = await getLiveUpdates(today, 100);
 
-    // Generate top 10 via Gemini
     const top10 = await generateDailyTop10(todayUpdates);
 
-    // Store daily summaries
     for (const item of top10) {
-      insertDailySummary(today, item.rank, item.title, item.summary, item.category);
+      await insertDailySummary(today, item.rank, item.title, item.summary, item.category);
     }
 
-    // Detect countdowns from recent updates
-    deactivateExpiredCountdowns();
+    await deactivateExpiredCountdowns();
     const countdowns = await detectCountdowns(todayUpdates);
 
     for (const countdown of countdowns) {
-      // Only add if target time is in the future
       if (new Date(countdown.targetTime) > new Date()) {
-        insertCountdown(countdown.title, countdown.description, countdown.targetTime);
+        await insertCountdown(countdown.title, countdown.description, countdown.targetTime);
       }
     }
 

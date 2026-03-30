@@ -4,12 +4,11 @@ import { summarizeRSSArticles, directNewsQuery } from "@/lib/gemini";
 import { insertLiveUpdate, cacheRSSItem, getUnprocessedRSSItems, markRSSItemsProcessed } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret for production
   const secret = request.nextUrl.searchParams.get("secret");
   if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    // Allow without secret in development
     if (process.env.NODE_ENV === "production") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -25,7 +24,7 @@ export async function GET(request: NextRequest) {
     if (rssArticles.length > 0) {
       // Cache RSS items
       for (const article of rssArticles) {
-        cacheRSSItem(
+        await cacheRSSItem(
           article.guid,
           article.title,
           article.link,
@@ -35,7 +34,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get unprocessed items
-      const unprocessed = getUnprocessedRSSItems();
+      const unprocessed = await getUnprocessedRSSItems();
 
       if (unprocessed.length > 0) {
         // Summarize with Gemini
@@ -48,21 +47,19 @@ export async function GET(request: NextRequest) {
         );
         
         // Mark as processed
-        markRSSItemsProcessed(unprocessed.map((item) => item.id));
+        await markRSSItemsProcessed(unprocessed.map((item) => item.id));
         source = "BBC News";
       } else {
-        // All articles already processed, use Gemini as backup
         update = await directNewsQuery();
         source = "AI Intelligence Brief";
       }
     } else {
-      // No RSS articles found — use Gemini as backup
       update = await directNewsQuery();
       source = "AI Intelligence Brief";
     }
 
     // Store in database
-    const dbEntry = insertLiveUpdate(
+    const dbEntry = await insertLiveUpdate(
       update.summary,
       source,
       update.severity,

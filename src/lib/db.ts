@@ -1,26 +1,23 @@
-import Database from "better-sqlite3";
-import path from "path";
-import fs from "fs";
+import { createClient, type Client } from "@libsql/client";
 
-const DB_PATH = path.join(process.cwd(), "data", "ainews.db");
+let db: Client | null = null;
 
-let db: Database.Database | null = null;
-
-export function getDb(): Database.Database {
+export function getDb(): Client {
   if (db) return db;
 
-  // Ensure data directory exists
-  const dataDir = path.dirname(DB_PATH);
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
+  db = createClient({
+    url: process.env.TURSO_DATABASE_URL || "file:local.db",
+    authToken: process.env.TURSO_AUTH_TOKEN,
+  });
 
-  db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
+  return db;
+}
 
-  // Initialize tables
-  db.exec(`
+// Initialize tables
+export async function initDb(): Promise<void> {
+  const db = getDb();
+
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS live_updates (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       timestamp TEXT NOT NULL DEFAULT (datetime('now')),
@@ -63,14 +60,7 @@ export function getDb(): Database.Database {
       processed INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
-
-    CREATE INDEX IF NOT EXISTS idx_live_updates_timestamp ON live_updates(timestamp DESC);
-    CREATE INDEX IF NOT EXISTS idx_daily_summaries_date ON daily_summaries(date);
-    CREATE INDEX IF NOT EXISTS idx_countdowns_active ON countdowns(is_active);
-    CREATE INDEX IF NOT EXISTS idx_rss_cache_processed ON rss_cache(processed);
   `);
-
-  return db;
 }
 
 // Types
@@ -106,132 +96,147 @@ export interface Countdown {
 }
 
 // Data access functions
-export function insertLiveUpdate(
+export async function insertLiveUpdate(
   content: string,
   source: string,
   severity: string,
   bulletPoints: string | null
-): LiveUpdate {
+): Promise<LiveUpdate> {
   const db = getDb();
-  const stmt = db.prepare(
-    `INSERT INTO live_updates (content, source, severity, bullet_points) VALUES (?, ?, ?, ?)`
-  );
-  const result = stmt.run(content, source, severity, bulletPoints);
-  return db
-    .prepare("SELECT * FROM live_updates WHERE id = ?")
-    .get(result.lastInsertRowid) as LiveUpdate;
+  await initDb();
+  const result = await db.execute({
+    sql: `INSERT INTO live_updates (content, source, severity, bullet_points) VALUES (?, ?, ?, ?)`,
+    args: [content, source, severity, bulletPoints],
+  });
+  const row = await db.execute({
+    sql: "SELECT * FROM live_updates WHERE id = ?",
+    args: [result.lastInsertRowid!],
+  });
+  return row.rows[0] as unknown as LiveUpdate;
 }
 
-export function getLiveUpdates(
+export async function getLiveUpdates(
   date?: string,
   limit = 50,
   offset = 0
-): LiveUpdate[] {
+): Promise<LiveUpdate[]> {
   const db = getDb();
+  await initDb();
   if (date) {
-    return db
-      .prepare(
-        `SELECT * FROM live_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`
-      )
-      .all(date, limit, offset) as LiveUpdate[];
+    const result = await db.execute({
+      sql: `SELECT * FROM live_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [date, limit, offset],
+    });
+    return result.rows as unknown as LiveUpdate[];
   }
-  return db
-    .prepare(
-      `SELECT * FROM live_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`
-    )
-    .all(limit, offset) as LiveUpdate[];
+  const result = await db.execute({
+    sql: `SELECT * FROM live_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+    args: [limit, offset],
+  });
+  return result.rows as unknown as LiveUpdate[];
 }
 
-export function insertDailySummary(
+export async function insertDailySummary(
   date: string,
   rank: number,
   title: string,
   summary: string,
   category: string
-): void {
+): Promise<void> {
   const db = getDb();
-  db.prepare(
-    `INSERT INTO daily_summaries (date, rank, title, summary, category) VALUES (?, ?, ?, ?, ?)`
-  ).run(date, rank, title, summary, category);
+  await initDb();
+  await db.execute({
+    sql: `INSERT INTO daily_summaries (date, rank, title, summary, category) VALUES (?, ?, ?, ?, ?)`,
+    args: [date, rank, title, summary, category],
+  });
 }
 
-export function getDailySummaries(date: string): DailySummary[] {
+export async function getDailySummaries(date: string): Promise<DailySummary[]> {
   const db = getDb();
-  return db
-    .prepare(
-      `SELECT * FROM daily_summaries WHERE date = ? ORDER BY rank ASC`
-    )
-    .all(date) as DailySummary[];
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM daily_summaries WHERE date = ? ORDER BY rank ASC`,
+    args: [date],
+  });
+  return result.rows as unknown as DailySummary[];
 }
 
-export function insertCountdown(
+export async function insertCountdown(
   title: string,
   description: string,
   targetTime: string
-): void {
+): Promise<void> {
   const db = getDb();
-  db.prepare(
-    `INSERT INTO countdowns (title, description, target_time) VALUES (?, ?, ?)`
-  ).run(title, description, targetTime);
+  await initDb();
+  await db.execute({
+    sql: `INSERT INTO countdowns (title, description, target_time) VALUES (?, ?, ?)`,
+    args: [title, description, targetTime],
+  });
 }
 
-export function getActiveCountdowns(): Countdown[] {
+export async function getActiveCountdowns(): Promise<Countdown[]> {
   const db = getDb();
-  // Deactivate expired countdowns
-  db.prepare(
-    `UPDATE countdowns SET is_active = 0 WHERE target_time < datetime('now') AND is_active = 1`
-  ).run();
-  return db
-    .prepare(`SELECT * FROM countdowns WHERE is_active = 1 ORDER BY target_time ASC`)
-    .all() as Countdown[];
+  await initDb();
+  await db.execute({
+    sql: `UPDATE countdowns SET is_active = 0 WHERE target_time < datetime('now') AND is_active = 1`,
+    args: [],
+  });
+  const result = await db.execute({
+    sql: `SELECT * FROM countdowns WHERE is_active = 1 ORDER BY target_time ASC`,
+    args: [],
+  });
+  return result.rows as unknown as Countdown[];
 }
 
-export function deactivateExpiredCountdowns(): void {
+export async function deactivateExpiredCountdowns(): Promise<void> {
   const db = getDb();
-  db.prepare(
-    `UPDATE countdowns SET is_active = 0 WHERE target_time < datetime('now') AND is_active = 1`
-  ).run();
+  await initDb();
+  await db.execute({
+    sql: `UPDATE countdowns SET is_active = 0 WHERE target_time < datetime('now') AND is_active = 1`,
+    args: [],
+  });
 }
 
-export function getAvailableDates(): string[] {
+export async function getAvailableDates(): Promise<string[]> {
   const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT DISTINCT date(timestamp) as date FROM live_updates ORDER BY date DESC`
-    )
-    .all() as { date: string }[];
-  return rows.map((r) => r.date);
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT DISTINCT date(timestamp) as date FROM live_updates ORDER BY date DESC`,
+    args: [],
+  });
+  return result.rows.map((r) => r.date as string);
 }
 
-export function cacheRSSItem(
+export async function cacheRSSItem(
   guid: string,
   title: string,
   link: string,
   pubDate: string,
   content: string
-): boolean {
+): Promise<boolean> {
   const db = getDb();
+  await initDb();
   try {
-    db.prepare(
-      `INSERT OR IGNORE INTO rss_cache (guid, title, link, pub_date, content) VALUES (?, ?, ?, ?, ?)`
-    ).run(guid, title, link, pubDate, content);
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO rss_cache (guid, title, link, pub_date, content) VALUES (?, ?, ?, ?, ?)`,
+      args: [guid, title, link, pubDate, content],
+    });
     return true;
   } catch {
     return false;
   }
 }
 
-export function getUnprocessedRSSItems(): Array<{
-  id: number;
-  title: string;
-  content: string;
-  link: string;
-  pub_date: string;
-}> {
+export async function getUnprocessedRSSItems(): Promise<
+  Array<{ id: number; title: string; content: string; link: string; pub_date: string }>
+> {
   const db = getDb();
-  return db
-    .prepare(`SELECT * FROM rss_cache WHERE processed = 0 ORDER BY pub_date DESC`)
-    .all() as Array<{
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM rss_cache WHERE processed = 0 ORDER BY pub_date DESC`,
+    args: [],
+  });
+  return result.rows as unknown as Array<{
     id: number;
     title: string;
     content: string;
@@ -240,10 +245,12 @@ export function getUnprocessedRSSItems(): Array<{
   }>;
 }
 
-export function markRSSItemsProcessed(ids: number[]): void {
+export async function markRSSItemsProcessed(ids: number[]): Promise<void> {
   const db = getDb();
+  await initDb();
   const placeholders = ids.map(() => "?").join(",");
-  db.prepare(
-    `UPDATE rss_cache SET processed = 1 WHERE id IN (${placeholders})`
-  ).run(...ids);
+  await db.execute({
+    sql: `UPDATE rss_cache SET processed = 1 WHERE id IN (${placeholders})`,
+    args: ids,
+  });
 }

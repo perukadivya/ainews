@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const offset = parseInt(request.nextUrl.searchParams.get("offset") || "0");
 
   try {
-    const updates = getLiveUpdates(date, limit, offset);
+    const updates = await getLiveUpdates(date, limit, offset);
     return NextResponse.json({ updates, count: updates.length });
   } catch (error) {
     console.error("Feed API error:", error);

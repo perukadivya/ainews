@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     request.nextUrl.searchParams.get("date") || formatDateKey(new Date());
 
   try {
-    const summaries = getDailySummaries(date);
+    const summaries = await getDailySummaries(date);
     return NextResponse.json({ date, summaries, count: summaries.length });
   } catch (error) {
     console.error("Daily API error:", error);
