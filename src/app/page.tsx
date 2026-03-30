@@ -6,6 +6,7 @@ import { LiveUpdateCard } from "@/components/live-update-card";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { WarClock } from "@/components/war-clock";
 import { DailyTopTen } from "@/components/daily-top-ten";
+import { JsonLd } from "@/components/json-ld";
 import { LoadingSkeleton, SidebarSkeleton } from "@/components/loading-skeleton";
 
 interface LiveUpdate {
@@ -98,8 +99,31 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [fetchFeed, fetchSidebar]);
 
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "LiveBlogPosting",
+    "headline": "AINews — War & Conflict Live Tracker",
+    "description": "Real-time global war and conflict tracker with hourly updates.",
+    "about": {
+      "@type": "Event",
+      "name": "Global Geopolitical Conflicts"
+    },
+    "coverageStartTime": new Date().toISOString(),
+    "liveBlogUpdate": updates.map((update) => ({
+      "@type": "BlogPosting",
+      "headline": update.content.substring(0, 80) + (update.content.length > 80 ? '...' : ''),
+      "datePublished": new Date(update.timestamp + "Z").toISOString(),
+      "articleBody": update.content,
+      "author": {
+        "@type": "Organization",
+        "name": update.source
+      }
+    }))
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <JsonLd structuredData={structuredData} />
       <Header />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
@@ -156,7 +180,7 @@ export default function HomePage() {
         {/* Main Layout */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left column: Live Blog */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0" role="feed" aria-busy={loading}>
             {loading ? (
               <LoadingSkeleton />
             ) : updates.length === 0 ? (
@@ -200,7 +224,7 @@ export default function HomePage() {
           </div>
 
           {/* Right column: Sidebar */}
-          <div className="w-full lg:w-80 shrink-0 space-y-4">
+          <aside className="w-full lg:w-80 shrink-0 space-y-4" aria-label="Supplementary info">
             {sidebarLoading ? (
               <SidebarSkeleton />
             ) : (
@@ -223,7 +247,7 @@ export default function HomePage() {
                 <DailyTopTen items={dailySummaries} />
               </>
             )}
-          </div>
+          </aside>
         </div>
       </main>
 

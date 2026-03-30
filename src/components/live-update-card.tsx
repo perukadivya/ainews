@@ -35,9 +35,10 @@ export function LiveUpdateCard({
   }
 
   return (
-    <div
+    <article
       className="animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group"
       style={{ animationDelay: `${index * 0.05}s` }}
+      aria-label={`${severity} update from ${source}`}
     >
       {/* Timeline dot */}
       <div className="absolute -left-[29px] top-6 z-10 hidden lg:block">
@@ -58,9 +59,9 @@ export function LiveUpdateCard({
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2.5 flex-wrap">
           <SeverityBadge severity={severity} />
-          <span className="text-xs text-muted font-mono">
+          <time dateTime={date.toISOString()} className="text-xs text-muted font-mono">
             {formatRelativeTime(date)}
-          </span>
+          </time>
         </div>
         <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-white/5 px-2 py-0.5 rounded font-mono shrink-0">
           {source}
@@ -85,11 +86,11 @@ export function LiveUpdateCard({
       )}
 
       {/* Timestamp footer */}
-      <div className="mt-3 pt-3 border-t border-white/5">
-        <span className="text-[10px] text-muted font-mono">
+      <footer className="mt-3 pt-3 border-t border-white/5">
+        <time dateTime={date.toISOString()} className="text-[10px] text-muted font-mono">
           {formatTimestamp(date)}
-        </span>
-      </div>
-    </div>
+        </time>
+      </footer>
+    </article>
   );
 }
