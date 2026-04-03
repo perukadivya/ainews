@@ -69,34 +69,49 @@ export function WarClock() {
           Active Conflicts
         </h3>
       </div>
-      <div className="space-y-2.5">
-        {ACTIVE_CONFLICTS.map((conflict) => {
+      <div className="space-y-4">
+        {ACTIVE_CONFLICTS.map((conflict, index) => {
           const duration = getDuration(conflict.startDate);
+          
+          // Calculate a rough relative max days based on the oldest conflict (Myanmar, ~2000 days roughly)
+          // This gives a visual bar proportional to the war's length
+          const maxDays = 2000;
+          const percentage = Math.min(100, Math.max(2, (duration.days / maxDays) * 100));
+          
           return (
             <div
               key={conflict.name}
-              className="flex items-center justify-between py-1.5 border-b border-white/5 last:border-0"
+              className="group relative"
             >
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-sm shrink-0">{conflict.emoji}</span>
-                <span className={`text-[11px] font-medium truncate ${conflict.color}`}>
-                  {conflict.name}
-                </span>
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-sm shrink-0">{conflict.emoji}</span>
+                  <span className={`text-[11px] font-medium truncate ${conflict.color}`}>
+                    {conflict.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <span className="text-xs font-bold font-mono text-foreground tabular-nums">
+                    {duration.days}
+                  </span>
+                  <span className="text-[9px] text-muted">d</span>
+                  <span className="text-[10px] font-mono text-muted tabular-nums ml-0.5">
+                    {String(duration.hours).padStart(2, "0")}h
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-1 shrink-0 ml-2">
-                <span className="text-xs font-bold font-mono text-foreground tabular-nums">
-                  {duration.days}
-                </span>
-                <span className="text-[9px] text-muted">d</span>
-                <span className="text-xs font-bold font-mono text-foreground tabular-nums">
-                  {String(duration.hours).padStart(2, "0")}
-                </span>
-                <span className="text-[9px] text-muted">h</span>
-                <span className="text-xs font-bold font-mono text-foreground tabular-nums">
-                  {String(duration.minutes).padStart(2, "0")}
-                </span>
-                <span className="text-[9px] text-muted">m</span>
+              
+              {/* Progress bar visual */}
+              <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-white/5">
+                <div 
+                  className={`h-full rounded-full opacity-80 group-hover:opacity-100 transition-all duration-500 ease-out bg-current ${conflict.color}`}
+                  style={{ width: `${percentage}%` }}
+                />
               </div>
+              
+              {index === 0 && (
+                <div className="absolute -inset-2 rounded-lg border border-breaking/20 pointer-events-none animate-pulse-live" style={{ opacity: 0.2 }} />
+              )}
             </div>
           );
         })}

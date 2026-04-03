@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ainews-app.vercel.app'),
+  metadataBase: new URL('https://ainews.kprsnt.in'),
   title: "AINews — War & Conflict Live Tracker",
   description: "Real-time global war and conflict tracker with hourly updates, daily summaries, and countdown timers. Stay informed with AI-powered news aggregation.",
   keywords: ["war news", "live blog", "conflict tracker", "military news", "real-time updates", "geopolitical news", "international relations", "AI news summary"],
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "AINews — War & Conflict Live Tracker",
     description: "Real-time conflict tracker with hourly updates and AI-powered summaries",
-    url: 'https://ainews-app.vercel.app',
+    url: 'https://ainews.kprsnt.in',
     siteName: 'AINews Tracker',
     locale: 'en_US',
     type: "website",

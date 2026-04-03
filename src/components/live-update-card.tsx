@@ -34,12 +34,40 @@ export function LiveUpdateCard({
     }
   }
 
+  const severityBorders = {
+    BREAKING: "border-l-[3px] border-l-breaking pl-4",
+    UPDATE: "border-l-[3px] border-l-update pl-4",
+    ANALYSIS: "border-l-[3px] border-l-analysis pl-4",
+    DIPLOMACY: "border-l-[3px] border-l-diplomacy pl-4",
+  };
+
+  const severityGlows = {
+    BREAKING: "hover:shadow-[0_4px_20px_rgba(220,38,38,0.15)]",
+    UPDATE: "hover:shadow-[0_4px_20px_rgba(245,158,11,0.15)]",
+    ANALYSIS: "hover:shadow-[0_4px_20px_rgba(59,130,246,0.15)]",
+    DIPLOMACY: "hover:shadow-[0_4px_20px_rgba(139,92,246,0.15)]",
+  };
+
+  const bulletColors = {
+    BREAKING: "text-breaking",
+    UPDATE: "text-update",
+    ANALYSIS: "text-analysis",
+    DIPLOMACY: "text-diplomacy",
+  };
+
   return (
     <article
-      className="animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group"
+      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group overflow-hidden ${severityGlows[severity]}`}
       style={{ animationDelay: `${index * 0.05}s` }}
       aria-label={`${severity} update from ${source}`}
     >
+      {/* Left colored accent border */}
+      <div className={`absolute top-0 bottom-0 left-0 w-1 ${
+        severity === "BREAKING" ? "bg-breaking" :
+        severity === "UPDATE" ? "bg-update" :
+        severity === "ANALYSIS" ? "bg-analysis" : "bg-diplomacy"
+      }`} />
+      
       {/* Timeline dot */}
       <div className="absolute -left-[29px] top-6 z-10 hidden lg:block">
         <div
@@ -75,10 +103,10 @@ export function LiveUpdateCard({
 
       {/* Bullet Points */}
       {parsedBullets.length > 0 && (
-        <ul className="space-y-1.5 ml-1">
+        <ul className="space-y-2 ml-1 mt-4 p-3 bg-black/40 rounded-lg border border-white/5">
           {parsedBullets.map((point, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
-              <span className="text-breaking mt-1 shrink-0">▸</span>
+            <li key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground leading-relaxed">
+              <span className={`${bulletColors[severity]} mt-1 shrink-0 font-bold`}>▸</span>
               <span>{point}</span>
             </li>
           ))}

@@ -1,8 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // Replace with your actual domain
-  const baseUrl = 'https://ainews-app.vercel.app';
+  const baseUrl = 'https://ainews.kprsnt.in';
 
   return [
     {

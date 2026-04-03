@@ -160,18 +160,18 @@ export default function ArchivePage() {
                         onClick={() => setSelectedDate(date)}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-all ${
                           isSelected
-                            ? "bg-breaking/20 text-breaking border border-breaking/30"
+                            ? "bg-gradient-to-r from-breaking/20 to-transparent text-breaking border border-breaking/30 shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
                             : hasData
-                            ? "hover:bg-white/5 text-foreground/80"
-                            : "text-muted/50 hover:bg-white/5"
+                            ? "hover:bg-white/5 text-foreground/90 border border-transparent hover:border-white/10"
+                            : "text-muted/40 hover:bg-white/5 border border-transparent"
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          <span className="text-muted font-mono w-8">{dayName}</span>
+                          <span className={`font-mono w-8 ${isSelected ? 'text-breaking/80' : 'text-muted'}`}>{dayName}</span>
                           <span>{label}</span>
                         </span>
                         {hasData && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-breaking" />
+                          <span className={`h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-breaking shadow-[0_0_8px_rgba(220,38,38,0.8)]' : 'bg-breaking/50'}`} />
                         )}
                       </button>
                     );

@@ -45,9 +45,23 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--color-background);
+  background-image: 
+    radial-gradient(ellipse at top right, rgba(220, 38, 38, 0.05), transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(59, 130, 246, 0.05), transparent 50%);
   color: var(--color-foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Background overlay texture */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Scrollbar */
@@ -147,9 +161,10 @@ body {
 
 /* Glass card effect */
 .glass-card {
-  background: linear-gradient(135deg, rgba(20, 20, 20, 0.8), rgba(10, 10, 10, 0.95));
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(145deg, rgba(20, 20, 20, 0.7), rgba(10, 10, 10, 0.9));
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 /* Timeline line */
@@ -163,7 +178,7 @@ body {
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, #dc2626, #1a1a1a);
+  background: linear-gradient(to bottom, var(--color-breaking), rgba(220, 38, 38, 0.2), transparent);
 }
 
 /* Shimmer loading */
@@ -175,10 +190,10 @@ body {
 
 /* Card hover effect */
 .card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 .card-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(220, 38, 38, 0.3);
-  box-shadow: 0 4px 20px rgba(220, 38, 38, 0.1);
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(220, 38, 38, 0.05);
 }

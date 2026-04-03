@@ -8,6 +8,7 @@ import { WarClock } from "@/components/war-clock";
 import { DailyTopTen } from "@/components/daily-top-ten";
 import { JsonLd } from "@/components/json-ld";
 import { LoadingSkeleton, SidebarSkeleton } from "@/components/loading-skeleton";
+import { formatDateKey } from "@/lib/utils";
 
 interface LiveUpdate {
   id: number;
@@ -45,7 +46,8 @@ export default function HomePage() {
 
   const fetchFeed = useCallback(async () => {
     try {
-      const res = await fetch("/api/feed?limit=50");
+      const today = formatDateKey(new Date());
+      const res = await fetch(`/api/feed?date=${today}&limit=50`);
       const data = await res.json();
       setUpdates(data.updates || []);
     } catch (error) {
@@ -188,7 +190,7 @@ export default function HomePage() {
                 <div className="text-4xl mb-4">📡</div>
                 <h3 className="text-lg font-semibold mb-2">No Updates Yet</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Click &quot;Refresh Now&quot; to fetch the latest news, or wait for the
+                  No developments recorded yet today. Click &quot;Refresh Now&quot; to fetch the latest news, or wait for the
                   next hourly update.
                 </p>
                 <button

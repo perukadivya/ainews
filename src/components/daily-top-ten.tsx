@@ -11,13 +11,23 @@ interface DailySummaryItem {
 }
 
 const categoryColors: Record<string, string> = {
-  military: "text-breaking",
-  diplomacy: "text-diplomacy",
-  humanitarian: "text-update",
-  economic: "text-green-400",
-  political: "text-blue-400",
-  analysis: "text-analysis",
-  general: "text-muted-foreground",
+  military: "text-breaking bg-breaking/10 border-breaking/20",
+  diplomacy: "text-diplomacy bg-diplomacy/10 border-diplomacy/20",
+  humanitarian: "text-update bg-update/10 border-update/20",
+  economic: "text-green-400 bg-green-400/10 border-green-400/20",
+  political: "text-blue-400 bg-blue-400/10 border-blue-400/20",
+  analysis: "text-analysis bg-analysis/10 border-analysis/20",
+  general: "text-muted-foreground bg-white/5 border-white/10",
+};
+
+const categoryIcons: Record<string, string> = {
+  military: "⚔️",
+  diplomacy: "🤝",
+  humanitarian: "🏥",
+  economic: "📈",
+  political: "🏛️",
+  analysis: "🧠",
+  general: "📰",
 };
 
 export function DailyTopTen({ items }: { items: DailySummaryItem[] }) {
@@ -46,14 +56,19 @@ export function DailyTopTen({ items }: { items: DailySummaryItem[] }) {
             className="group cursor-default"
           >
             <div className="flex items-start gap-2.5">
-              <span
-                className={cn(
-                  "text-lg font-bold font-mono leading-none mt-0.5 min-w-[1.5rem]",
-                  item.rank <= 3 ? "text-breaking" : "text-muted"
-                )}
-              >
-                {String(item.rank).padStart(2, "0")}
-              </span>
+              <div className="flex flex-col items-center justify-center shrink-0 w-8 h-8 rounded-lg bg-black/40 border border-white/5 shadow-inner">
+                <span
+                  className={cn(
+                    "text-sm font-bold font-mono leading-none",
+                    item.rank === 1 ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" : 
+                    item.rank === 2 ? "text-slate-300 drop-shadow-[0_0_8px_rgba(203,213,225,0.6)]" :
+                    item.rank === 3 ? "text-amber-600 drop-shadow-[0_0_8px_rgba(217,119,6,0.6)]" : 
+                    "text-muted"
+                  )}
+                >
+                  {String(item.rank).padStart(2, "0")}
+                </span>
+              </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-xs font-semibold text-foreground/90 leading-relaxed group-hover:text-white transition-colors">
                   {item.title}
@@ -61,14 +76,17 @@ export function DailyTopTen({ items }: { items: DailySummaryItem[] }) {
                 <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5 line-clamp-2">
                   {item.summary}
                 </p>
-                <span
-                  className={cn(
-                    "text-[9px] uppercase tracking-wider font-mono mt-1 inline-block",
-                    categoryColors[item.category] || categoryColors.general
-                  )}
-                >
-                  {item.category}
-                </span>
+                <div className="mt-2 text-xs">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[10px] uppercase tracking-wider font-mono",
+                      categoryColors[item.category] || categoryColors.general
+                    )}
+                  >
+                    <span>{categoryIcons[item.category] || categoryIcons.general}</span>
+                    {item.category}
+                  </span>
+                </div>
               </div>
             </div>
             {item.rank < items.length && (

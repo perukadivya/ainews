@@ -8,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       disallow: ['/api/'],
     },
     // Replace with your actual domain when deploying
-    sitemap: 'https://ainews-app.vercel.app/sitemap.xml',
+    sitemap: 'https://ainews.kprsnt.in/sitemap.xml',
   };
 }
