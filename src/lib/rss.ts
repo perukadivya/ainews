@@ -7,8 +7,9 @@ const parser = new Parser({
   },
 });
 
-// RSS feeds — broad world/conflict coverage
+// RSS feeds — multi-source world/conflict coverage
 const RSS_FEEDS = [
+  // BBC
   {
     url: "http://feeds.bbci.co.uk/news/world/rss.xml",
     name: "BBC World",
@@ -28,6 +29,21 @@ const RSS_FEEDS = [
   {
     url: "http://feeds.bbci.co.uk/news/world/africa/rss.xml",
     name: "BBC Africa",
+  },
+  // Reuters
+  {
+    url: "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best",
+    name: "Reuters",
+  },
+  // Al Jazeera
+  {
+    url: "https://www.aljazeera.com/xml/rss/all.xml",
+    name: "Al Jazeera",
+  },
+  // AP News
+  {
+    url: "https://rsshub.app/apnews/topics/world-news",
+    name: "AP News",
   },
 ];
 
@@ -142,48 +158,120 @@ export interface RSSArticle {
   source: string;
 }
 
+export interface FeedHealth {
+  name: string;
+  status: "success" | "error";
+  articleCount: number;
+  error?: string;
+}
+
 function isWarRelated(title: string, content: string): boolean {
   const text = `${title} ${content}`.toLowerCase();
   return WAR_KEYWORDS.some((keyword) => text.includes(keyword));
 }
 
 /**
- * Fetch and filter war/conflict related articles from RSS feeds
+ * Simple title similarity check for deduplication across sources
  */
-export async function fetchWarNews(): Promise<RSSArticle[]> {
-  const allArticles: RSSArticle[] = [];
+function areTitlesSimilar(a: string, b: string): boolean {
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+  const wordsA = new Set(normalize(a).split(/\s+/));
+  const wordsB = new Set(normalize(b).split(/\s+/));
+  
+  // Count shared words
+  let shared = 0;
+  for (const word of wordsA) {
+    if (wordsB.has(word) && word.length > 2) shared++;
+  }
+  
+  const maxLen = Math.max(wordsA.size, wordsB.size);
+  return maxLen > 0 && shared / maxLen > 0.6; // 60% word overlap = duplicate
+}
 
-  for (const feed of RSS_FEEDS) {
-    try {
-      const parsed = await parser.parseURL(feed.url);
+/**
+ * Fetch and filter war/conflict related articles from RSS feeds
+ * Uses Promise.allSettled for concurrent fetching
+ */
+export async function fetchWarNews(): Promise<{
+  articles: RSSArticle[];
+  feedHealth: FeedHealth[];
+}> {
+  const feedHealth: FeedHealth[] = [];
 
-      for (const item of parsed.items || []) {
-        const title = item.title || "";
-        const content = item.contentSnippet || item.content || "";
-        const link = item.link || "";
-        const pubDate = item.pubDate || new Date().toISOString();
-        const guid = item.guid || item.link || `${feed.name}-${Date.now()}`;
+  // Fetch all feeds concurrently
+  const results = await Promise.allSettled(
+    RSS_FEEDS.map(async (feed) => {
+      try {
+        const parsed = await parser.parseURL(feed.url);
+        const articles: RSSArticle[] = [];
 
-        if (isWarRelated(title, content)) {
-          allArticles.push({
-            title,
-            content: content.substring(0, 2000),
-            link,
-            pubDate,
-            guid,
-            source: feed.name,
-          });
+        for (const item of parsed.items || []) {
+          const title = item.title || "";
+          const content = item.contentSnippet || item.content || "";
+          const link = item.link || "";
+          const pubDate = item.pubDate || new Date().toISOString();
+          const guid =
+            item.guid || item.link || `${feed.name}-${Date.now()}`;
+
+          if (isWarRelated(title, content)) {
+            articles.push({
+              title,
+              content: content.substring(0, 2000),
+              link,
+              pubDate,
+              guid,
+              source: feed.name,
+            });
+          }
         }
+
+        feedHealth.push({
+          name: feed.name,
+          status: "success",
+          articleCount: articles.length,
+        });
+
+        return articles;
+      } catch (error) {
+        console.error(`Error fetching RSS feed ${feed.name}:`, error);
+        feedHealth.push({
+          name: feed.name,
+          status: "error",
+          articleCount: 0,
+          error: String(error),
+        });
+        return [];
       }
-    } catch (error) {
-      console.error(`Error fetching RSS feed ${feed.name}:`, error);
+    })
+  );
+
+  // Collect all articles
+  const allArticles: RSSArticle[] = [];
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      allArticles.push(...result.value);
+    }
+  }
+
+  // Deduplicate by title similarity
+  const deduplicated: RSSArticle[] = [];
+  for (const article of allArticles) {
+    const isDup = deduplicated.some((existing) =>
+      areTitlesSimilar(existing.title, article.title)
+    );
+    if (!isDup) {
+      deduplicated.push(article);
     }
   }
 
   // Sort by date (newest first) and limit
-  allArticles.sort(
+  deduplicated.sort(
     (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
   );
 
-  return allArticles.slice(0, 15); // Return top 15 most recent
+  return {
+    articles: deduplicated.slice(0, 20), // Top 20 (increased from 15)
+    feedHealth,
+  };
 }

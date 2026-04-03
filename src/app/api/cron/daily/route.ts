@@ -12,6 +12,33 @@ import { formatDateKey } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
+/**
+ * Retry wrapper with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 1,
+  initialDelay = 2000
+): Promise<T> {
+  let lastError: Error | unknown;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        const delay = initialDelay * Math.pow(2, attempt);
+        console.warn(
+          `Attempt ${attempt + 1} failed, retrying in ${delay}ms...`,
+          error
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export async function GET(request: NextRequest) {
   const secret = request.nextUrl.searchParams.get("secret");
   if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
@@ -34,18 +61,31 @@ export async function GET(request: NextRequest) {
 
     const todayUpdates = await getLiveUpdates(today, 100);
 
-    const top10 = await generateDailyTop10(todayUpdates);
+    // Generate top 10 with retry
+    const top10 = await withRetry(() => generateDailyTop10(todayUpdates));
 
     for (const item of top10) {
-      await insertDailySummary(today, item.rank, item.title, item.summary, item.category);
+      await insertDailySummary(
+        today,
+        item.rank,
+        item.title,
+        item.summary,
+        item.category
+      );
     }
 
     await deactivateExpiredCountdowns();
-    const countdowns = await detectCountdowns(todayUpdates);
+
+    // Detect countdowns with retry
+    const countdowns = await withRetry(() => detectCountdowns(todayUpdates));
 
     for (const countdown of countdowns) {
       if (new Date(countdown.targetTime) > new Date()) {
-        await insertCountdown(countdown.title, countdown.description, countdown.targetTime);
+        await insertCountdown(
+          countdown.title,
+          countdown.description,
+          countdown.targetTime
+        );
       }
     }
 
