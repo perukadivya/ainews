@@ -45,10 +45,12 @@ const ACTIVE_CONFLICTS: ConflictTimer[] = [
 function getDuration(startDate: Date) {
   const now = new Date();
   const diff = now.getTime() - startDate.getTime();
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const totalDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const years = Math.floor(totalDays / 365);
+  const remainingDays = totalDays % 365;
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return { days, hours, minutes };
+  return { totalDays, years, days: remainingDays, hours, minutes };
 }
 
 export function WarClock() {
@@ -76,7 +78,7 @@ export function WarClock() {
           // Calculate a rough relative max days based on the oldest conflict (Myanmar, ~2000 days roughly)
           // This gives a visual bar proportional to the war's length
           const maxDays = 2000;
-          const percentage = Math.min(100, Math.max(2, (duration.days / maxDays) * 100));
+          const percentage = Math.min(100, Math.max(2, (duration.totalDays / maxDays) * 100));
           
           return (
             <div
@@ -91,6 +93,14 @@ export function WarClock() {
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0 ml-2">
+                  {duration.years > 0 && (
+                    <>
+                      <span className="text-xs font-bold font-mono text-foreground tabular-nums">
+                        {duration.years}
+                      </span>
+                      <span className="text-[9px] text-muted">y</span>
+                    </>
+                  )}
                   <span className="text-xs font-bold font-mono text-foreground tabular-nums">
                     {duration.days}
                   </span>

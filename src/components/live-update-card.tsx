@@ -35,10 +35,10 @@ export function LiveUpdateCard({
   }
 
   const severityBorders = {
-    BREAKING: "border-l-[3px] border-l-breaking pl-4",
-    UPDATE: "border-l-[3px] border-l-update pl-4",
-    ANALYSIS: "border-l-[3px] border-l-analysis pl-4",
-    DIPLOMACY: "border-l-[3px] border-l-diplomacy pl-4",
+    BREAKING: "border-l-[4px] border-l-breaking pl-5",
+    UPDATE: "border-l-[4px] border-l-update pl-5",
+    ANALYSIS: "border-l-[4px] border-l-analysis pl-5",
+    DIPLOMACY: "border-l-[4px] border-l-diplomacy pl-5",
   };
 
   const severityGlows = {
@@ -57,16 +57,10 @@ export function LiveUpdateCard({
 
   return (
     <article
-      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 pl-7 relative group overflow-hidden ${severityGlows[severity]}`}
+      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group ${severityBorders[severity]} ${severityGlows[severity]}`}
       style={{ animationDelay: `${index * 0.05}s` }}
       aria-label={`${severity} update from ${source}`}
     >
-      {/* Left colored accent border */}
-      <div className={`absolute top-0 bottom-0 left-0 w-1 ${
-        severity === "BREAKING" ? "bg-breaking" :
-        severity === "UPDATE" ? "bg-update" :
-        severity === "ANALYSIS" ? "bg-analysis" : "bg-diplomacy"
-      }`} />
       
       {/* Timeline dot */}
       <div className="absolute -left-[29px] top-6 z-10 hidden lg:block">
