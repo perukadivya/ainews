@@ -14,6 +14,7 @@ export function CountdownTimer({
   targetTime,
 }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState({
+    years: 0,
     days: 0,
     hours: 0,
     minutes: 0,
@@ -28,13 +29,14 @@ export function CountdownTimer({
       const diff = target - now;
 
       if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
+        setTimeLeft({ years: 0, days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
         clearInterval(interval);
         return;
       }
 
       setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        years: Math.floor(diff / (1000 * 60 * 60 * 24 * 365)),
+        days: Math.floor((diff % (1000 * 60 * 60 * 24 * 365)) / (1000 * 60 * 60 * 24)),
         hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
         minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
         seconds: Math.floor((diff % (1000 * 60)) / 1000),
@@ -60,13 +62,16 @@ export function CountdownTimer({
           {description}
         </p>
       )}
-      <div className="grid grid-cols-4 gap-2">
-        {[
+      <div className={`grid gap-2 ${timeLeft.years > 0 ? "grid-cols-5" : "grid-cols-4"}`}>
+        {(timeLeft.years > 0
+          ? [{ value: timeLeft.years, label: "Yrs" }]
+          : []
+        ).concat([
           { value: timeLeft.days, label: "Days" },
           { value: timeLeft.hours, label: "Hrs" },
           { value: timeLeft.minutes, label: "Min" },
           { value: timeLeft.seconds, label: "Sec" },
-        ].map(({ value, label }) => (
+        ]).map(({ value, label }) => (
           <div
             key={label}
             className="flex flex-col items-center bg-black/50 rounded-lg py-2 px-1 border border-white/5"

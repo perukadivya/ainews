@@ -46,10 +46,10 @@ export function Header() {
           <Link
             href="/"
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              "px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
               pathname === "/"
-                ? "bg-white/10 text-white"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                ? "bg-breaking/10 text-breaking border border-breaking/20 shadow-[inset_0_0_15px_rgba(220,38,38,0.1)]"
+                : "text-muted-foreground hover:text-white hover:bg-white/5 font-medium"
             )}
           >
             Live Feed
@@ -57,10 +57,10 @@ export function Header() {
           <Link
             href="/archive"
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+              "px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200",
               pathname === "/archive"
-                ? "bg-white/10 text-white"
-                : "text-muted-foreground hover:text-white hover:bg-white/5"
+                ? "bg-breaking/10 text-breaking border border-breaking/20 shadow-[inset_0_0_15px_rgba(220,38,38,0.1)]"
+                : "text-muted-foreground hover:text-white hover:bg-white/5 font-medium"
             )}
           >
             Archive

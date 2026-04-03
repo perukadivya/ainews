@@ -28,7 +28,7 @@ export interface GeminiCountdown {
  */
 export async function summarizeRSSArticles(
   articles: Array<{ title: string; content: string; link: string }>
-): Promise<GeminiNewsUpdate> {
+): Promise<GeminiNewsUpdate[]> {
   const articleText = articles
     .map((a, i) => `Article ${i + 1}: ${a.title}\n${a.content}`)
     .join("\n\n---\n\n");
@@ -39,13 +39,15 @@ Analyze these news articles and create a concise hourly update:
 
 ${articleText}
 
-Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
-{
-  "severity": "BREAKING" or "UPDATE" or "ANALYSIS" or "DIPLOMACY",
-  "summary": "A 1-2 sentence summary of the key development",
-  "bulletPoints": ["point 1", "point 2", "point 3", "point 4", "point 5"],
-  "source": "BBC News"
-}
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of distinct news updates (generate between 1 to 4 updates depending on how many distinct major conflicts have news):
+[
+  {
+    "severity": "BREAKING" or "UPDATE" or "ANALYSIS" or "DIPLOMACY",
+    "summary": "A 1-2 sentence summary of the key development",
+    "bulletPoints": ["point 1", "point 2", "point 3"],
+    "source": "BBC News"
+  }
+]
 
 Rules:
 - Use BREAKING for major military actions, casualties, or escalations
@@ -61,7 +63,9 @@ Rules:
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
     const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    return JSON.parse(cleaned) as GeminiNewsUpdate;
+    // Sometimes the model might wrap in an object, handle parsing properly
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
     console.error("Gemini RSS summarization error:", error);
     throw error;
@@ -71,7 +75,7 @@ Rules:
 /**
  * Direct news query - fallback when RSS has no relevant articles
  */
-export async function directNewsQuery(): Promise<GeminiNewsUpdate> {
+export async function directNewsQuery(): Promise<GeminiNewsUpdate[]> {
   const now = new Date().toISOString();
   const prompt = `You are a war correspondent AI. The current date/time is ${now}.
 
@@ -85,18 +89,21 @@ What are the latest developments in ongoing global wars and military conflicts? 
 
 Provide the most recent and significant updates.
 
-Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
-{
-  "severity": "BREAKING" or "UPDATE" or "ANALYSIS" or "DIPLOMACY",
-  "summary": "A 1-2 sentence summary of the most significant war development right now",
-  "bulletPoints": ["latest point 1", "latest point 2", "latest point 3", "latest point 4", "latest point 5"],
-  "source": "AI Intelligence Brief"
-}
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of updates (generate between 2 to 4 distinct updates for different conflicts):
+[
+  {
+    "severity": "BREAKING" or "UPDATE" or "ANALYSIS" or "DIPLOMACY",
+    "summary": "A 1-2 sentence summary of the most significant development",
+    "bulletPoints": ["latest point 1", "latest point 2", "latest point 3"],
+    "source": "AI Intelligence Brief"
+  }
+]
 
 Rules:
+- Generate MULTIPLE distinct updates (e.g. one for Ukraine, one for Middle East)
 - Be factual and cite what you know about current developments
 - Use appropriate severity level
-- 3-5 bullet points covering different conflicts if possible
+- 2-4 bullet points per update
 - Focus on what is happening NOW, not historical events
 - If you're unsure about very recent events, say "based on available intelligence"`;
 
@@ -104,7 +111,8 @@ Rules:
     const result = await model.generateContent(prompt);
     const text = result.response.text().trim();
     const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    return JSON.parse(cleaned) as GeminiNewsUpdate;
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
   } catch (error) {
     console.error("Gemini direct query error:", error);
     throw error;

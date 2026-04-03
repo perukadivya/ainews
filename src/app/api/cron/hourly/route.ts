@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Step 1: Try RSS feeds first
     const rssArticles = await fetchWarNews();
     
-    let update;
+    let updates = [];
     let source = "BBC News";
 
     if (rssArticles.length > 0) {
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
 
       if (unprocessed.length > 0) {
         // Summarize with Gemini
-        update = await summarizeRSSArticles(
+        updates = await summarizeRSSArticles(
           unprocessed.map((item) => ({
             title: item.title,
             content: item.content,
@@ -50,27 +50,35 @@ export async function GET(request: NextRequest) {
         await markRSSItemsProcessed(unprocessed.map((item) => item.id));
         source = "BBC News";
       } else {
-        update = await directNewsQuery();
+        updates = await directNewsQuery();
         source = "AI Intelligence Brief";
       }
     } else {
-      update = await directNewsQuery();
+      updates = await directNewsQuery();
       source = "AI Intelligence Brief";
     }
 
     // Store in database
-    const dbEntry = await insertLiveUpdate(
-      update.summary,
-      source,
-      update.severity,
-      JSON.stringify(update.bulletPoints)
-    );
+    // Store in database
+    const dbEntries = [];
+    for (const update of updates) {
+      if (update && update.summary) {
+        const dbEntry = await insertLiveUpdate(
+          update.summary,
+          update.source || source, // Use the update's source if provided, else default
+          update.severity,
+          JSON.stringify(update.bulletPoints)
+        );
+        dbEntries.push(dbEntry);
+      }
+    }
 
     return NextResponse.json({
       success: true,
       source,
       rssArticlesFound: rssArticles.length,
-      update: dbEntry,
+      updatesGenerated: dbEntries.length,
+      updates: dbEntries,
     });
   } catch (error) {
     console.error("Hourly cron error:", error);

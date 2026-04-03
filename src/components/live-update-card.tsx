@@ -57,7 +57,7 @@ export function LiveUpdateCard({
 
   return (
     <article
-      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group overflow-hidden ${severityGlows[severity]}`}
+      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 pl-7 relative group overflow-hidden ${severityGlows[severity]}`}
       style={{ animationDelay: `${index * 0.05}s` }}
       aria-label={`${severity} update from ${source}`}
     >
