@@ -223,3 +223,110 @@ Rules:
     return [];
   }
 }
+
+// ====== TECH NEWS ======
+
+export interface GeminiTechUpdate {
+  category: "ai" | "cybersecurity" | "startups" | "hardware" | "software" | "crypto" | "policy" | "science" | "general";
+  summary: string;
+  bulletPoints: string[];
+  source: string;
+  link?: string;
+}
+
+/**
+ * Summarize RSS articles about technology
+ */
+export async function summarizeTechArticles(
+  articles: Array<{ title: string; content: string; link: string }>
+): Promise<GeminiTechUpdate[]> {
+  const articleText = articles
+    .map((a, i) => `Article ${i + 1}: ${a.title}\nURL: ${a.link}\n${a.content}`)
+    .join("\n\n---\n\n");
+
+  const prompt = `You are a senior tech journalist covering the latest developments in technology.
+
+Analyze these tech news articles and create concise updates:
+
+${articleText}
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of distinct tech news updates (generate between 2 to 6 updates depending on how many distinct stories exist):
+[
+  {
+    "category": "ai" or "cybersecurity" or "startups" or "hardware" or "software" or "crypto" or "policy" or "science" or "general",
+    "summary": "A 1-2 sentence summary of the key development",
+    "bulletPoints": ["key point 1", "key point 2", "key point 3"],
+    "source": "The Verge",
+    "link": "https://example.com/article"
+  }
+]
+
+Rules:
+- Use "ai" for artificial intelligence, machine learning, LLM news
+- Use "cybersecurity" for hacks, breaches, security vulnerabilities
+- Use "startups" for funding, acquisitions, new products, IPOs
+- Use "hardware" for chips, devices, semiconductors, gadgets
+- Use "software" for platforms, apps, developer tools, open source
+- Use "crypto" for cryptocurrency, blockchain, web3
+- Use "policy" for tech regulation, antitrust, government actions
+- Use "science" for deep tech research, space, biotech
+- Keep each bullet point concise (1 line)
+- Focus on the most significant and recent developments
+- If an article URL is available, include it in the link field
+- 2-4 bullet points per update`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (error) {
+    console.error("Gemini tech summarization error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Direct tech news query - fallback when RSS has no relevant articles
+ */
+export async function directTechNewsQuery(): Promise<GeminiTechUpdate[]> {
+  const now = new Date().toISOString();
+  const prompt = `You are a senior tech journalist. The current date/time is ${now}.
+
+What are the latest and most significant developments in technology? Cover topics including:
+- Artificial Intelligence and Machine Learning
+- Cybersecurity threats and breaches
+- Startup funding and acquisitions
+- New hardware and chip developments
+- Major software releases and platform updates
+- Crypto and blockchain developments
+- Tech policy and regulation
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of 3-5 distinct updates:
+[
+  {
+    "category": "ai" or "cybersecurity" or "startups" or "hardware" or "software" or "crypto" or "policy" or "science" or "general",
+    "summary": "A 1-2 sentence summary of the development",
+    "bulletPoints": ["point 1", "point 2", "point 3"],
+    "source": "AI Intelligence Brief"
+  }
+]
+
+Rules:
+- Generate distinct updates covering different tech sectors
+- Be factual and cite what you know about current developments
+- 2-4 bullet points per update
+- Focus on what is happening NOW, not historical events`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const text = result.response.text().trim();
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (error) {
+    console.error("Gemini direct tech query error:", error);
+    throw error;
+  }
+}

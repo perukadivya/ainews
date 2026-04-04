@@ -60,6 +60,17 @@ export function Header() {
             <span className="sm:hidden">Live</span>
           </Link>
           <Link
+            href="/tech"
+            className={cn(
+              "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200",
+              pathname === "/tech"
+                ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[inset_0_0_15px_rgba(6,182,212,0.1)]"
+                : "text-muted-foreground hover:text-white hover:bg-white/5 font-medium"
+            )}
+          >
+            Tech
+          </Link>
+          <Link
             href="/archive"
             className={cn(
               "px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all duration-200",

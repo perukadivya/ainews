@@ -60,6 +60,28 @@ export async function initDb(): Promise<void> {
       processed INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS tech_updates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      content TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'tech-rss',
+      category TEXT NOT NULL DEFAULT 'general',
+      bullet_points TEXT,
+      link TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS tech_rss_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guid TEXT UNIQUE,
+      title TEXT,
+      link TEXT,
+      pub_date TEXT,
+      content TEXT,
+      processed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -251,6 +273,108 @@ export async function markRSSItemsProcessed(ids: number[]): Promise<void> {
   const placeholders = ids.map(() => "?").join(",");
   await db.execute({
     sql: `UPDATE rss_cache SET processed = 1 WHERE id IN (${placeholders})`,
+    args: ids,
+  });
+}
+
+// ====== TECH NEWS ======
+
+export interface TechUpdate {
+  id: number;
+  timestamp: string;
+  content: string;
+  source: string;
+  category: string;
+  bullet_points: string | null;
+  link: string | null;
+  created_at: string;
+}
+
+export async function insertTechUpdate(
+  content: string,
+  source: string,
+  category: string,
+  bulletPoints: string | null,
+  link: string | null
+): Promise<TechUpdate> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `INSERT INTO tech_updates (content, source, category, bullet_points, link) VALUES (?, ?, ?, ?, ?)`,
+    args: [content, source, category, bulletPoints, link],
+  });
+  const row = await db.execute({
+    sql: "SELECT * FROM tech_updates WHERE id = ?",
+    args: [result.lastInsertRowid!],
+  });
+  return row.rows[0] as unknown as TechUpdate;
+}
+
+export async function getTechUpdates(
+  date?: string,
+  limit = 50,
+  offset = 0
+): Promise<TechUpdate[]> {
+  const db = getDb();
+  await initDb();
+  if (date) {
+    const result = await db.execute({
+      sql: `SELECT * FROM tech_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [date, limit, offset],
+    });
+    return result.rows as unknown as TechUpdate[];
+  }
+  const result = await db.execute({
+    sql: `SELECT * FROM tech_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+    args: [limit, offset],
+  });
+  return result.rows as unknown as TechUpdate[];
+}
+
+export async function cacheTechRSSItem(
+  guid: string,
+  title: string,
+  link: string,
+  pubDate: string,
+  content: string
+): Promise<boolean> {
+  const db = getDb();
+  await initDb();
+  try {
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO tech_rss_cache (guid, title, link, pub_date, content) VALUES (?, ?, ?, ?, ?)`,
+      args: [guid, title, link, pubDate, content],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getUnprocessedTechRSSItems(): Promise<
+  Array<{ id: number; title: string; content: string; link: string; pub_date: string }>
+> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM tech_rss_cache WHERE processed = 0 ORDER BY pub_date DESC`,
+    args: [],
+  });
+  return result.rows as unknown as Array<{
+    id: number;
+    title: string;
+    content: string;
+    link: string;
+    pub_date: string;
+  }>;
+}
+
+export async function markTechRSSItemsProcessed(ids: number[]): Promise<void> {
+  const db = getDb();
+  await initDb();
+  const placeholders = ids.map(() => "?").join(",");
+  await db.execute({
+    sql: `UPDATE tech_rss_cache SET processed = 1 WHERE id IN (${placeholders})`,
     args: ids,
   });
 }
