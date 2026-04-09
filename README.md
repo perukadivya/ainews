@@ -1,6 +1,6 @@
-# AINews — War & Conflict Live Tracker
+# AINews — Live News Tracker by AI
 
-Real-time global war and conflict tracker with AI-powered hourly updates, daily summaries, and countdown timers.
+Real-time global war and conflict tracker, tech news tracker with AI-powered hourly updates, daily summaries, and countdown timers.
 
 ![AINews Screenshot](https://img.shields.io/badge/Status-Live-red?style=for-the-badge)
 

@@ -208,7 +208,7 @@ export default function HomePage() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "LiveBlogPosting",
-    headline: "AINews — War & Conflict Live Tracker",
+    headline: "AINews — Live News Tracker by AI",
     description:
       "Real-time global war and conflict tracker with hourly updates.",
     about: {
