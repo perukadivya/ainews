@@ -92,6 +92,18 @@ export async function initDb(): Promise<void> {
       source_url TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS tech_countdowns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      target_time TEXT NOT NULL,
+      emoji TEXT NOT NULL DEFAULT '🚀',
+      type TEXT NOT NULL DEFAULT 'upcoming',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      auto_detected INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 }
 
@@ -434,4 +446,43 @@ export async function getTechAvailableDates(): Promise<string[]> {
     `SELECT DISTINCT date(timestamp) as date FROM tech_updates ORDER BY date DESC`
   );
   return result.rows.map((r: any) => r.date as string);
+}
+
+export interface TechCountdown {
+  id: number;
+  title: string;
+  description: string | null;
+  target_time: string;
+  emoji: string;
+  type: "launched" | "upcoming";
+  is_active: number;
+  auto_detected: number;
+  created_at: string;
+}
+
+export async function insertTechCountdown(
+  title: string,
+  description: string,
+  targetTime: string,
+  emoji: string,
+  type: string
+): Promise<void> {
+  const db = getDb();
+  await initDb();
+  await db.execute({
+    sql: `INSERT INTO tech_countdowns (title, description, target_time, emoji, type) VALUES (?, ?, ?, ?, ?)`,
+    args: [title, description, targetTime, emoji, type],
+  });
+}
+
+export async function getActiveTechCountdowns(): Promise<TechCountdown[]> {
+  const db = getDb();
+  await initDb();
+  // We keep 'launched' events as 'active' so they continue to display "time since".
+  // For 'upcoming' events, we could deactivate them when they pass, but we'll adapt the display.
+  const result = await db.execute({
+    sql: `SELECT * FROM tech_countdowns WHERE is_active = 1 ORDER BY target_time DESC LIMIT 10`,
+    args: [],
+  });
+  return result.rows as unknown as TechCountdown[];
 }

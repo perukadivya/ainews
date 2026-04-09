@@ -1,8 +1,9 @@
-import { generateTechDailyTop10 } from "@/lib/gemini";
+import { generateTechDailyTop10, detectTechCountdowns } from "@/lib/gemini";
 import {
   getTechUpdates,
   insertTechDailySummary,
   getTechDailySummaries,
+  insertTechCountdown,
 } from "@/lib/db";
 import { formatDateKey } from "@/lib/utils";
 
@@ -58,6 +59,22 @@ async function run() {
     console.log("Successfully completed daily tech summary", {
       summariesCreated: top10.length,
     });
+
+    try {
+      const countdowns = await withRetry(() => detectTechCountdowns(todayUpdates));
+      for (const cd of countdowns) {
+        await insertTechCountdown(
+          cd.title,
+          cd.description,
+          cd.time,
+          cd.emoji || "🚀",
+          cd.type || "upcoming"
+        );
+      }
+      console.log(`Successfully added ${countdowns.length} tech events/countdowns`);
+    } catch (e) {
+      console.error("Failed to detect tech countdowns:", e);
+    }
   } catch (error) {
     console.error("Tech daily cron error:", error);
     process.exit(1);

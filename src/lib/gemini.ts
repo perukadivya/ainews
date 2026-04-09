@@ -1,7 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 export interface GeminiNewsUpdate {
   severity: "BREAKING" | "UPDATE" | "ANALYSIS" | "DIPLOMACY";
@@ -39,7 +39,7 @@ async function generateContentWithFallback(prompt: string, maxRetries = 3): Prom
         console.warn(`All ${maxRetries} Gemini attempts failed. Switching to fallback Nvidia model...`);
         break;
       }
-      await delay(2000 * attempt); // Exponential backoff 2s, 4s, 6s...
+      await delay(5000 * attempt); // Exponential backoff ... wait 5s, 10s...
     }
   }
 
@@ -49,7 +49,7 @@ async function generateContentWithFallback(prompt: string, maxRetries = 3): Prom
   const fallbackModel = process.env.FALLBACK_MODEL || "z-ai/glm5";
 
   if (!apiKey) {
-      throw new Error("No NVIDIA_API_KEY set for fallback model. Please set it in Vercel.");
+    throw new Error("No NVIDIA_API_KEY set for fallback model. Please set it in Vercel.");
   }
 
   try {
@@ -196,11 +196,10 @@ export async function generateDailyTop10(
 Today's updates:
 ${updatesText}
 
-${
-  todayUpdates.length === 0
-    ? "No updates today. Create a top 10 based on what you know about ongoing global wars and conflicts as of today."
-    : ""
-}
+${todayUpdates.length === 0
+      ? "No updates today. Create a top 10 based on what you know about ongoing global wars and conflicts as of today."
+      : ""
+    }
 
 Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
 [
@@ -406,11 +405,10 @@ Details: ${u.bullet_points || "N/A"}`
 Today's updates:
 ${updatesText}
 
-${
-  todayUpdates.length === 0
-    ? "No updates today. Create a top 10 based on what you know about the most significant technology news of today."
-    : ""
-}
+${todayUpdates.length === 0
+      ? "No updates today. Create a top 10 based on what you know about the most significant technology news of today."
+      : ""
+    }
 
 Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
 [
@@ -436,5 +434,59 @@ Rules:
   } catch (error) {
     console.error("Gemini tech daily top 10 error:", error);
     throw error;
+  }
+}
+
+export interface GeminiTechEvent {
+  title: string;
+  description: string;
+  time: string; // ISO 8601
+  emoji: string;
+  type: "launched" | "upcoming";
+}
+
+/**
+ * Detect countdowns/deadlines from recent tech news
+ */
+export async function detectTechCountdowns(
+  recentUpdates: Array<{ content: string; bullet_points: string | null }>
+): Promise<GeminiTechEvent[]> {
+  const now = new Date().toISOString();
+  const updatesText = recentUpdates
+    .map((u, i) => `${i + 1}. ${u.content}\n${u.bullet_points || ""}`)
+    .join("\n\n");
+
+  const prompt = `You are an AI tracking the tech industry for major model launches, product releases, developer conferences, and upcoming technology events.
+
+Current date/time: ${now}
+
+Recent updates:
+${updatesText}
+
+Find any mentioned major tech events, product launches, AI model releases, or conferences from the news. Distinguish between ones that just HAPPENED recently ("launched") and ones that are happening in the FUTURE ("upcoming").
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
+[
+  {
+    "title": "Short title (e.g. 'Meta Llama 4 Launch')",
+    "description": "1 short sentence about the event",
+    "time": "ISO 8601 datetime string",
+    "emoji": "1 relevant emoji (e.g. 🦙, 🍎, 🧠)",
+    "type": "launched" or "upcoming"
+  }
+]
+
+Rules:
+- Only include highly significant tech/AI events
+- Time should be an exact ISO 8601 string of when it happened or will happen
+- If no events are found, return an empty array: []`;
+
+  try {
+    const text = await generateContentWithFallback(prompt);
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleaned) as GeminiTechEvent[];
+  } catch (error) {
+    console.error("Gemini tech countdown detection error:", error);
+    return [];
   }
 }

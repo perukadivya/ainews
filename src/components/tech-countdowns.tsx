@@ -126,13 +126,38 @@ function EventCard({ event }: { event: TechEvent }) {
 }
 
 export function TechCountdowns() {
+  const [events, setEvents] = useState<TechEvent[]>(TECH_EVENTS);
+
+  useEffect(() => {
+    async function fetchEvents() {
+      try {
+        const res = await fetch("/api/tech-countdowns");
+        const data = await res.json();
+        if (data.countdowns && data.countdowns.length > 0) {
+          // Map DB format to UI format
+          const formatted = data.countdowns.map((cd: any) => ({
+            title: cd.title,
+            description: cd.description || "",
+            time: cd.target_time,
+            emoji: cd.emoji || "🚀",
+            type: cd.type || "upcoming",
+          }));
+          setEvents(formatted);
+        }
+      } catch (e) {
+        console.error("Failed to load tech countdowns:", e);
+      }
+    }
+    fetchEvents();
+  }, []);
+
   return (
     <div className="space-y-3">
       <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
         🚀 AI Model Launches & Upcoming Events
       </h3>
-      {TECH_EVENTS.map((event) => (
-        <EventCard key={event.title} event={event} />
+      {events.map((event, idx) => (
+        <EventCard key={idx} event={event} />
       ))}
     </div>
   );
