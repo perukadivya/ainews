@@ -1,0 +1,14 @@
+name: Daily Tech Summary
+
+on:
+  schedule:
+    - cron: '15 2 * * *' # Runs at 02:15 UTC (07:45 AM IST) every day
+  workflow_dispatch:
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Tech Summary API
+        run: |
+          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/tech-daily?secret=${{ secrets.CRON_SECRET }}"
