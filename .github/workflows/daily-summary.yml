@@ -1,0 +1,14 @@
+name: Daily Summary
+
+on:
+  schedule:
+    - cron: '0 2 * * *' # Runs at 02:00 UTC (07:30 AM IST) every day
+  workflow_dispatch: # Allows you to manually trigger the workflow from the Actions tab
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Daily Summary API
+        run: |
+          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/daily?secret=${{ secrets.CRON_SECRET }}"

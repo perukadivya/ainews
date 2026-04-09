@@ -1,0 +1,14 @@
+name: Hourly Tech Updates
+
+on:
+  schedule:
+    - cron: '5 * * * *' # Runs at 05 minutes past the hour
+  workflow_dispatch: # Allows you to manually trigger the workflow from the Actions tab
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Hourly Tech News Update
+        run: |
+          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/tech?secret=${{ secrets.CRON_SECRET }}"

@@ -1,0 +1,14 @@
+name: Hourly War Updates
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Runs at 00 minutes past the hour
+  workflow_dispatch: # Allows you to manually trigger the workflow from the Actions tab
+
+jobs:
+  run-cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Hourly War News Update
+        run: |
+          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/hourly?secret=${{ secrets.CRON_SECRET }}"
