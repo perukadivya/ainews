@@ -1,14 +1,29 @@
-name: Daily Summary
+name: Daily War Summary
 
 on:
   schedule:
-    - cron: '0 2 * * *' # Runs at 02:00 UTC (07:30 AM IST) every day
-  workflow_dispatch: # Allows you to manually trigger the workflow from the Actions tab
+    - cron: '0 2 * * *' # Runs at 02:00 UTC (07:30 AM IST) daily
+  workflow_dispatch:
 
 jobs:
   run-cron:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Daily Summary API
-        run: |
-          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/daily?secret=${{ secrets.CRON_SECRET }}"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run script
+        run: npx tsx scripts/cron-daily-summary.ts
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}

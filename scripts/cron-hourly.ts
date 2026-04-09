@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
 import { fetchWarNews } from "@/lib/rss";
 import { summarizeRSSArticles, directNewsQuery } from "@/lib/gemini";
 import {
@@ -10,12 +9,6 @@ import {
 } from "@/lib/db";
 import { formatDateKey } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-export const maxDuration = 60; // Max allowed for Vercel Hobby
-
-/**
- * Simple content similarity check to prevent duplicate updates
- */
 function isContentSimilar(a: string, b: string): boolean {
   const normalize = (s: string) =>
     s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
@@ -31,23 +24,15 @@ function isContentSimilar(a: string, b: string): boolean {
   return maxLen > 0 && shared / maxLen > 0.7; // 70% word overlap = duplicate
 }
 
-export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get("secret");
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
-
+async function run() {
+  console.log("Starting hourly war update...");
   try {
-    // Step 1: Try RSS feeds first
     const { articles: rssArticles, feedHealth } = await fetchWarNews();
 
     let updates = [];
     let source = "BBC News";
 
     if (rssArticles.length > 0) {
-      // Cache RSS items
       for (const article of rssArticles) {
         await cacheRSSItem(
           article.guid,
@@ -58,13 +43,10 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Get unprocessed items
       const allUnprocessed = await getUnprocessedRSSItems();
-      // Limit to 10 articles per run to prevent 504 Function Timeouts
       const unprocessed = allUnprocessed.slice(0, 10);
 
       if (unprocessed.length > 0) {
-        // Summarize with Gemini
         updates = await summarizeRSSArticles(
           unprocessed.map((item) => ({
             title: item.title,
@@ -73,7 +55,6 @@ export async function GET(request: NextRequest) {
           }))
         );
 
-        // Mark as processed
         await markRSSItemsProcessed(unprocessed.map((item) => item.id));
         source = "Multi-Source RSS";
       } else {
@@ -85,17 +66,14 @@ export async function GET(request: NextRequest) {
       source = "AI Intelligence Brief";
     }
 
-    // Get recent updates for duplicate detection
     const today = formatDateKey(new Date());
     const recentUpdates = await getLiveUpdates(today, 20);
 
-    // Store in database (with duplicate detection)
     const dbEntries = [];
     let skippedDuplicates = 0;
 
     for (const update of updates) {
       if (update && update.summary) {
-        // Check for duplicates against recent entries
         const isDuplicate = recentUpdates.some((existing) =>
           isContentSimilar(existing.content, update.summary)
         );
@@ -115,20 +93,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
+    console.log("Successfully completed hourly update", {
       source,
       rssArticlesFound: rssArticles.length,
       updatesGenerated: dbEntries.length,
       skippedDuplicates,
-      feedHealth,
-      updates: dbEntries,
+      feedHealth
     });
   } catch (error) {
     console.error("Hourly cron error:", error);
-    return NextResponse.json(
-      { error: "Failed to process hourly update", details: String(error) },
-      { status: 500 }
-    );
+    process.exit(1);
   }
 }
+
+run().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});

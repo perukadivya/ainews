@@ -1,20 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
 import { generateDailyTop10, detectCountdowns } from "@/lib/gemini";
 import {
   getLiveUpdates,
   insertDailySummary,
-  insertCountdown,
-  deactivateExpiredCountdowns,
   getDailySummaries,
+  insertCountdown,
 } from "@/lib/db";
 import { formatDateKey } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
-export const maxDuration = 30;
-
-/**
- * Retry wrapper with exponential backoff
- */
 async function withRetry<T>(
   fn: () => Promise<T>,
   maxRetries = 1,
@@ -39,29 +31,19 @@ async function withRetry<T>(
   throw lastError;
 }
 
-export async function GET(request: NextRequest) {
-  const secret = request.nextUrl.searchParams.get("secret");
-  if (process.env.CRON_SECRET && secret !== process.env.CRON_SECRET) {
-    if (process.env.NODE_ENV === "production") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
-
+async function run() {
+  console.log("Starting daily war summary...");
   try {
     const today = formatDateKey(new Date());
 
     const existing = await getDailySummaries(today);
     if (existing.length > 0) {
-      return NextResponse.json({
-        success: true,
-        message: "Daily summaries already exist for today",
-        count: existing.length,
-      });
+      console.log("War daily summaries already exist for today");
+      return;
     }
 
     const todayUpdates = await getLiveUpdates(today, 100);
 
-    // Generate top 10 with retry
     const top10 = await withRetry(() => generateDailyTop10(todayUpdates));
 
     for (const item of top10) {
@@ -74,31 +56,23 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    await deactivateExpiredCountdowns();
-
-    // Detect countdowns with retry
     const countdowns = await withRetry(() => detectCountdowns(todayUpdates));
 
-    for (const countdown of countdowns) {
-      if (new Date(countdown.targetTime) > new Date()) {
-        await insertCountdown(
-          countdown.title,
-          countdown.description,
-          countdown.targetTime
-        );
-      }
+    for (const cd of countdowns) {
+      await insertCountdown(cd.title, cd.description, cd.targetTime);
     }
 
-    return NextResponse.json({
-      success: true,
+    console.log("Successfully completed daily war summary", {
       summariesCreated: top10.length,
-      countdownsDetected: countdowns.length,
+      countdownsCreated: countdowns.length
     });
   } catch (error) {
     console.error("Daily cron error:", error);
-    return NextResponse.json(
-      { error: "Failed to process daily summary", details: String(error) },
-      { status: 500 }
-    );
+    process.exit(1);
   }
 }
+
+run().catch((err) => {
+  console.error("Fatal error:", err);
+  process.exit(1);
+});
