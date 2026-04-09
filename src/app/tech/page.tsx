@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/toast-provider";
 import { formatDateKey } from "@/lib/utils";
 import { TechUpdateCard, type TechUpdate, type TechCategory, CATEGORY_CONFIG } from "@/components/tech-update-card";
+import { DailyTopTen } from "@/components/daily-top-ten";
 
 
 
@@ -18,6 +19,7 @@ import { TechUpdateCard, type TechUpdate, type TechCategory, CATEGORY_CONFIG } f
 
 export default function TechPage() {
   const [updates, setUpdates] = useState<TechUpdate[]>([]);
+  const [dailySummaries, setDailySummaries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState(false);
@@ -76,11 +78,22 @@ export default function TechPage() {
     [addToast]
   );
 
+  
+  const fetchSidebar = useCallback(async () => {
+    try {
+      const res = await fetch("/api/daily-tech");
+      const data = await res.json();
+      setDailySummaries(data.summaries || []);
+    } catch (error) {
+      console.error("Failed to fetch sidebar:", error);
+    }
+  }, []);
+
   const triggerRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch("/api/cron/tech");
       await fetchFeed(true);
+      await fetchSidebar();
       setLastRefresh(new Date());
       addToast({
         message: "Tech feed refreshed successfully",
@@ -99,6 +112,7 @@ export default function TechPage() {
 
   useEffect(() => {
     fetchFeed();
+    fetchSidebar();
 
     // Auto-refresh every 5 minutes
     let interval: NodeJS.Timeout;
@@ -106,6 +120,7 @@ export default function TechPage() {
     const startInterval = () => {
       interval = setInterval(() => {
         fetchFeed(true);
+        fetchSidebar();
         setLastRefresh(new Date());
       }, 5 * 60 * 1000);
     };
@@ -115,6 +130,7 @@ export default function TechPage() {
         clearInterval(interval);
       } else {
         fetchFeed(true);
+        fetchSidebar();
         startInterval();
       }
     };
@@ -126,7 +142,7 @@ export default function TechPage() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [fetchFeed]);
+  }, [fetchFeed, fetchSidebar]);
 
   // Filter logic
   const filteredUpdates = updates.filter((u) => {
@@ -360,9 +376,12 @@ export default function TechPage() {
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
 
-        {/* Updates Feed */}
-        <ErrorBoundary>
-          {loading ? (
+        {/* Main Layout */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left column: Feed */}
+          <div className="flex-1 min-w-0" role="feed" aria-busy={loading}>
+            <ErrorBoundary>
+              {loading ? (
             <LoadingSkeleton />
           ) : fetchError ? (
             <div className="glass-card rounded-xl p-10 text-center border border-white/5">
@@ -426,18 +445,33 @@ export default function TechPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredUpdates.map((update, index) => (
-                <TechUpdateCard
-                  key={update.id}
-                  update={update}
-                  index={index}
-                  isNew={newUpdateIds.has(update.id)}
-                />
-              ))}
-            </div>
+            <div className="relative">
+                  {/* Timeline line */}
+                  <div className="hidden lg:block absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-cyan-500/20 to-transparent" />
+
+                  {/* Updates */}
+                  <div className="space-y-4 lg:pl-12">
+                    {filteredUpdates.map((update, index) => (
+                      <TechUpdateCard
+                        key={update.id}
+                        update={update}
+                        index={index}
+                        isNew={newUpdateIds.has(update.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
           )}
-        </ErrorBoundary>
+            </ErrorBoundary>
+          </div>
+
+          {/* Right column: Sidebar */}
+          <aside className="w-full lg:w-80 shrink-0 space-y-4">
+             <ErrorBoundary>
+                <DailyTopTen items={dailySummaries} />
+             </ErrorBoundary>
+          </aside>
+        </div>
       </main>
 
       {/* Footer */}

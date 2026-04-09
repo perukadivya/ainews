@@ -123,10 +123,17 @@ export function TechUpdateCard({
 
   return (
     <article
-      className="glass-card rounded-xl border border-white/5 card-hover animate-fade-in-up"
+      className={`glass-card rounded-xl border-y border-r border-white/5 border-l-[4px] ${config.borderColor} card-hover animate-fade-in-up relative group lg:pl-5`}
       style={{ animationDelay: `${index * 0.05}s` }}
       id={`tech-update-${update.id}`}
     >
+      {/* Timeline dot */}
+      <div className="absolute -left-[29px] top-6 z-10 hidden lg:block">
+        <div
+          className={`h-3 w-3 rounded-full border-2 border-card ${config.bgColor.replace('/10', '')} ${isNew ? 'animate-pulse-live' : ''}`}
+        />
+      </div>
+
       <div className="p-4 sm:p-5">
         {/* Top row: Category badge + time + NEW badge */}
         <div className="flex items-center justify-between mb-3">

@@ -116,8 +116,8 @@ export default function HomePage() {
   const triggerRefresh = async () => {
     setRefreshing(true);
     try {
-      await fetch("/api/cron/hourly");
       await fetchFeed(true);
+      await fetchSidebar();
       setLastRefresh(new Date());
       addToast({ message: "Feed refreshed successfully", severity: "info" });
     } catch (error) {
