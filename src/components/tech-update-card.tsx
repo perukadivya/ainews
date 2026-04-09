@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { formatRelativeTime, formatTimestamp } from "@/lib/utils";
 
 export interface TechUpdate {
   id: number;
@@ -104,8 +105,34 @@ export function TechUpdateCard({
   isNew?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showNewBadge, setShowNewBadge] = useState(isNew);
+  const [copied, setCopied] = useState(false);
   const category = (update.category as TechCategory) || "general";
   const config = CATEGORY_CONFIG[category] || CATEGORY_CONFIG.general;
+
+  // Auto-dismiss NEW badge after 5 minutes
+  useEffect(() => {
+    if (!isNew) return;
+    const timer = setTimeout(() => setShowNewBadge(false), 5 * 60 * 1000);
+    return () => clearTimeout(timer);
+  }, [isNew]);
+
+  const date = new Date(update.timestamp + "Z");
+
+  const handleShare = async () => {
+    const text = `[${config.label}] ${update.content}`;
+    try {
+      if (update.link) {
+        await navigator.clipboard.writeText(`${text}\n\nRead more: ${update.link}`);
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback
+    }
+  };
 
   let bulletPoints: string[] = [];
   if (update.bullet_points) {
@@ -136,22 +163,48 @@ export function TechUpdateCard({
 
       <div className="p-4 sm:p-5">
         {/* Top row: Category badge + time + NEW badge */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        {/* NEW badge */}
+        {showNewBadge && (
+          <div className="absolute -top-2 -right-2 z-20">
+            <span className="animate-new-badge inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500 text-white shadow-lg shadow-emerald-500/30">
+              NEW
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <span
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bgColor} ${config.color} border ${config.borderColor}`}
             >
               <span>{config.emoji}</span>
               {config.label}
             </span>
-            {isNew && (
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 animate-new-badge">
-                NEW
-              </span>
-            )}
+            <time dateTime={date.toISOString()} className="text-xs text-muted font-mono">
+              {formatRelativeTime(date)}
+            </time>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] text-muted font-mono">{time}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Share button */}
+            <button
+              onClick={handleShare}
+              className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-1 rounded"
+              aria-label="Copy to clipboard"
+              title="Copy to clipboard"
+            >
+              {copied ? (
+                <svg className="h-3.5 w-3.5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              )}
+            </button>
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground bg-white/5 px-2 py-0.5 rounded font-mono">
+              {update.source}
+            </span>
           </div>
         </div>
 
@@ -199,17 +252,17 @@ export function TechUpdateCard({
           </>
         )}
 
-        {/* Footer: Source + Link */}
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-          <span className="text-[10px] text-muted font-mono">
-            {update.source}
-          </span>
+        {/* Footer: Time + Link */}
+        <footer className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
+          <time dateTime={date.toISOString()} className="text-[10px] text-muted font-mono">
+            {formatTimestamp(date)}
+          </time>
           {update.link && (
             <a
               href={update.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[10px] text-muted-foreground hover:text-white transition-colors flex items-center gap-1"
+              className="text-[10px] text-muted-foreground hover:text-white transition-colors flex items-center gap-1 uppercase tracking-wider font-bold"
             >
               Read more
               <svg
@@ -227,7 +280,7 @@ export function TechUpdateCard({
               </svg>
             </a>
           )}
-        </div>
+        </footer>
       </div>
     </article>
   );
