@@ -11,7 +11,7 @@ import {
 import { formatDateKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60; // Max allowed for Vercel Hobby
 
 /**
  * Simple content similarity check to prevent duplicate updates
@@ -59,7 +59,9 @@ export async function GET(request: NextRequest) {
       }
 
       // Get unprocessed items
-      const unprocessed = await getUnprocessedTechRSSItems();
+      const allUnprocessed = await getUnprocessedTechRSSItems();
+      // Limit to 10 articles per run to prevent 504 Function Timeouts
+      const unprocessed = allUnprocessed.slice(0, 10);
 
       if (unprocessed.length > 0) {
         // Summarize with Gemini
