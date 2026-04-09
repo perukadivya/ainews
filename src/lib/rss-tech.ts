@@ -200,7 +200,15 @@ export async function fetchTechNews(): Promise<{
   const results = await Promise.allSettled(
     TECH_FEEDS.map(async (feed) => {
       try {
-        const parsed = await parser.parseURL(feed.url);
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Strict 8s timeout")), 8000)
+        );
+
+        const parsed = await Promise.race([
+          parser.parseURL(feed.url),
+          timeoutPromise,
+        ]);
+        
         const articles: TechRSSArticle[] = [];
 
         for (const item of parsed.items || []) {

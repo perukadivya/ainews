@@ -203,7 +203,16 @@ export async function fetchWarNews(): Promise<{
   const results = await Promise.allSettled(
     RSS_FEEDS.map(async (feed) => {
       try {
-        const parsed = await parser.parseURL(feed.url);
+        // Strict timeout wrapper
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Strict 8s timeout")), 8000)
+        );
+
+        const parsed = await Promise.race([
+          parser.parseURL(feed.url),
+          timeoutPromise,
+        ]);
+        
         const articles: RSSArticle[] = [];
 
         for (const item of parsed.items || []) {
