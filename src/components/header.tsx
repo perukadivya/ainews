@@ -8,7 +8,6 @@ export function Header() {
   const pathname = usePathname();
   const isTech = pathname.startsWith("/tech");
 
-  const colorPrimary = isTech ? "cyan-500" : "breaking";
   const colorText = isTech ? "text-cyan-400" : "text-breaking";
   const colorPulse = isTech ? "bg-cyan-500" : "bg-breaking";
   const colorShadow = isTech
@@ -37,10 +36,10 @@ export function Header() {
       <div className="scanning-line" />
 
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 relative">
-        {/* Left Side: Logo + Domain Switchers (War / Tech) */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          {/* Logo / Brand */}
-          <Link href={isTech ? "/tech" : "/"} className="flex items-center gap-3 group">
+        {/* Left Side: Logo + Domain Tabs */}
+        <div className="flex items-center gap-3 sm:gap-5">
+          {/* Logo — always goes to home */}
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="relative flex items-center justify-center hidden sm:flex">
               <div
                 className={cn(
@@ -72,29 +71,40 @@ export function Header() {
             </div>
           </Link>
 
-          {/* Domain Context Selectors */}
-          <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/5">
-            <Link
-              href="/tech"
-              className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200",
-                isTech
-                  ? "bg-cyan-500/20 text-cyan-400 shadow-[inset_0_0_10px_rgba(6,182,212,0.1)]"
-                  : "text-muted-foreground hover:text-white hover:bg-white/5"
-              )}
-            >
-              Tech
-            </Link>
+          {/* Separator */}
+          <div className="hidden sm:block w-px h-8 bg-white/10" />
+
+          {/* Domain Tabs — War first, then Tech */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-white/[0.03] border border-white/[0.06]">
             <Link
               href="/"
               className={cn(
-                "px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200",
+                "relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
                 !isTech
-                  ? "bg-breaking/20 text-breaking shadow-[inset_0_0_10px_rgba(220,38,38,0.1)]"
-                  : "text-muted-foreground hover:text-white hover:bg-white/5"
+                  ? "bg-breaking/15 text-breaking border border-breaking/25 shadow-[0_0_12px_rgba(220,38,38,0.1)]"
+                  : "text-muted-foreground/70 hover:text-white hover:bg-white/5 border border-transparent"
               )}
             >
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full transition-all",
+                !isTech ? "bg-breaking shadow-[0_0_6px_rgba(220,38,38,0.6)]" : "bg-white/20"
+              )} />
               War
+            </Link>
+            <Link
+              href="/tech"
+              className={cn(
+                "relative px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5",
+                isTech
+                  ? "bg-cyan-500/15 text-cyan-400 border border-cyan-500/25 shadow-[0_0_12px_rgba(6,182,212,0.1)]"
+                  : "text-muted-foreground/70 hover:text-white hover:bg-white/5 border border-transparent"
+              )}
+            >
+              <span className={cn(
+                "h-1.5 w-1.5 rounded-full transition-all",
+                isTech ? "bg-cyan-500 shadow-[0_0_6px_rgba(6,182,212,0.6)]" : "bg-white/20"
+              )} />
+              Tech
             </Link>
           </div>
         </div>
@@ -128,7 +138,7 @@ export function Header() {
           </span>
         </div>
 
-        {/* Right Side: View Navigators (Live Feed / Archive) */}
+        {/* Right Side: View Navigators */}
         <div className="flex items-center gap-2">
           {/* Mobile LIVE indicator */}
           <div

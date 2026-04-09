@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { LiveUpdateCard } from "@/components/live-update-card";
 import { CountdownTimer } from "@/components/countdown-timer";
 import { WarClock } from "@/components/war-clock";
@@ -493,82 +494,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 mt-12 bg-black/40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Brand */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="h-6 w-6 rounded bg-gradient-to-br from-breaking to-red-900 flex items-center justify-center font-mono font-bold text-[9px]">
-                  AI
-                </div>
-                <span className="text-sm font-bold">
-                  AI<span className="text-breaking">News</span>
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                AI-powered global war &amp; conflict tracker. Data aggregated
-                from BBC, Reuters, Al Jazeera RSS &amp; Gemini AI analysis.
-              </p>
-            </div>
-            {/* Info */}
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                How It Works
-              </h4>
-              <ul className="space-y-1.5 text-[11px] text-muted-foreground">
-                <li className="flex items-center gap-1.5">
-                  <span className="text-breaking">▸</span> Multi-source RSS
-                  feeds scanned for conflicts
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <span className="text-breaking">▸</span> Gemini AI
-                  summarizes &amp; categorizes
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <span className="text-breaking">▸</span> Daily Top 10
-                  generated at 11:30 PM UTC
-                </li>
-              </ul>
-            </div>
-            {/* Status */}
-            <div>
-              <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                System Status
-              </h4>
-              <div className="space-y-1.5 text-[11px] text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`h-1.5 w-1.5 rounded-full ${
-                      isOnline
-                        ? "bg-success animate-pulse-live"
-                        : "bg-breaking"
-                    }`}
-                  />
-                  <span>
-                    {isOnline ? "Live data pipeline active" : "Offline"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                  <span>Daily cron: 23:30 UTC</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                  <span>Auto-refresh: every 5 min</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-6 pt-4 border-t border-white/5 text-center">
-            <p className="text-[10px] text-muted font-mono">
-              © {new Date().getFullYear()} AINews • Built with Next.js, Turso
-              &amp; Gemini AI
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

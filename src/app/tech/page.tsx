@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Header } from "@/components/header";
+import { Footer } from "@/components/footer";
 import { JsonLd } from "@/components/json-ld";
 import { LoadingSkeleton } from "@/components/loading-skeleton";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -9,6 +10,7 @@ import { useToast } from "@/components/toast-provider";
 import { formatDateKey } from "@/lib/utils";
 import { TechUpdateCard, type TechUpdate, type TechCategory, CATEGORY_CONFIG } from "@/components/tech-update-card";
 import { DailyTopTen } from "@/components/daily-top-ten";
+import { TechCountdowns } from "@/components/tech-countdowns";
 
 
 
@@ -468,33 +470,14 @@ export default function TechPage() {
           {/* Right column: Sidebar */}
           <aside className="w-full lg:w-80 shrink-0 space-y-4">
              <ErrorBoundary>
+                <TechCountdowns />
                 <DailyTopTen items={dailySummaries} />
              </ErrorBoundary>
           </aside>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 mt-12 bg-black/40">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-mono font-bold text-[8px]">
-                AI
-              </div>
-              <span className="text-xs font-bold">
-                AI<span className="text-cyan-400">News</span>{" "}
-                <span className="text-muted-foreground font-normal">
-                  Tech Edition
-                </span>
-              </span>
-            </div>
-            <p className="text-[10px] text-muted font-mono">
-              © {new Date().getFullYear()} AINews • Powered by Gemini AI
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
