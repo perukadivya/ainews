@@ -425,3 +425,13 @@ export async function getTechDailySummaries(date: string): Promise<TechDailySumm
   });
   return result.rows as unknown as TechDailySummary[];
 }
+
+
+export async function getTechAvailableDates(): Promise<string[]> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute(
+    `SELECT DISTINCT date(timestamp) as date FROM tech_updates ORDER BY date DESC`
+  );
+  return result.rows.map((r: any) => r.date as string);
+}
