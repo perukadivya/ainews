@@ -13,21 +13,21 @@ interface TechEvent {
 const TECH_EVENTS: TechEvent[] = [
   // Recent launches — "time since"
   {
-    title: "Meta Llama 4 Launch",
+    title: "Meta Llama 4",
     description: "Meta's most powerful open-source model family",
     time: "2026-04-09T17:00:00Z",
     emoji: "🦙",
     type: "launched",
   },
   {
-    title: "Claude Opus 4 Launch",
+    title: "Claude 4 Opus",
     description: "Anthropic's frontier reasoning model",
     time: "2026-04-08T17:00:00Z",
     emoji: "🧠",
     type: "launched",
   },
   {
-    title: "GPT-5 Launch",
+    title: "GPT-5",
     description: "OpenAI's next-gen multimodal model",
     time: "2026-04-03T17:00:00Z",
     emoji: "⚡",

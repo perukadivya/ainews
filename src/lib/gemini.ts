@@ -468,7 +468,7 @@ Find any mentioned major tech events, product launches, AI model releases, or co
 Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
 [
   {
-    "title": "Short title (e.g. 'Meta Llama 4 Launch')",
+    "title": "Short title (e.g. 'Meta Llama 4' or 'Google I/O')",
     "description": "1 short sentence about the event",
     "time": "ISO 8601 datetime string",
     "emoji": "1 relevant emoji (e.g. 🦙, 🍎, 🧠)",
@@ -478,6 +478,7 @@ Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
 
 Rules:
 - Only include highly significant tech/AI events
+- Title should pull the exact latest model name or event name (do NOT append words like 'Launch' to model names)
 - Time should be an exact ISO 8601 string of when it happened or will happen
 - If no events are found, return an empty array: []`;
 
