@@ -33,6 +33,15 @@ async function withRetry<T>(
 
 async function run() {
   console.log("Starting daily war summary...");
+
+  // Hard 9-minute timeout — kill process if it hangs
+  const TIMEOUT_MS = 9 * 60 * 1000;
+  const timeoutId = setTimeout(() => {
+    console.error(`FATAL: Script exceeded ${TIMEOUT_MS / 60000} minute timeout. Force exiting.`);
+    process.exit(1);
+  }, TIMEOUT_MS);
+  timeoutId.unref();
+
   try {
     const today = formatDateKey(new Date());
 
