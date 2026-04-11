@@ -30,20 +30,20 @@ const RSS_FEEDS = [
     url: "http://feeds.bbci.co.uk/news/world/africa/rss.xml",
     name: "BBC Africa",
   },
-  // Reuters
+  // The Guardian (replaced Reuters — discontinued RSS)
   {
-    url: "https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best",
-    name: "Reuters",
+    url: "https://www.theguardian.com/world/rss",
+    name: "The Guardian",
   },
   // Al Jazeera
   {
     url: "https://www.aljazeera.com/xml/rss/all.xml",
     name: "Al Jazeera",
   },
-  // AP News
+  // France 24 (replaced AP News — no public RSS)
   {
-    url: "https://rsshub.app/apnews/topics/world-news",
-    name: "AP News",
+    url: "https://www.france24.com/en/rss",
+    name: "France 24",
   },
 ];
 

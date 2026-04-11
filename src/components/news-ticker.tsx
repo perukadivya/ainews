@@ -27,7 +27,7 @@ export function NewsTicker({ items }: { items: TickerItem[] }) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Left label */}
-      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-3 pr-5 bg-gradient-to-r from-black via-black/95 to-transparent">
+      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-3 pr-12 bg-gradient-to-r from-black via-black/95 to-transparent">
         <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-breaking font-mono whitespace-nowrap">
           <span className="h-1.5 w-1.5 rounded-full bg-breaking animate-pulse-live" />
           Breaking
@@ -35,12 +35,12 @@ export function NewsTicker({ items }: { items: TickerItem[] }) {
       </div>
 
       {/* Right fade */}
-      <div className="absolute right-0 top-0 bottom-0 z-10 w-16 bg-gradient-to-l from-background to-transparent" />
+      <div className="absolute right-0 top-0 bottom-0 z-10 w-20 bg-gradient-to-l from-background to-transparent" />
 
       {/* Scrolling content */}
       <div
         ref={scrollRef}
-        className="ticker-scroll flex items-center gap-8 py-2.5 pl-28"
+        className="ticker-scroll flex items-center gap-8 py-2.5 pl-40"
         style={{ animationPlayState: isPaused ? "paused" : "running" }}
       >
         {displayItems.map((item, i) => (

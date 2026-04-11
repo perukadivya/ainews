@@ -53,7 +53,7 @@ export function SearchFilterBar({
         {/* Search Input */}
         <div className="relative mb-3">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+            className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -66,7 +66,7 @@ export function SearchFilterBar({
             placeholder="Search updates..."
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
-            className="w-full bg-black/50 border border-white/10 rounded-lg pl-11 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted font-medium focus:outline-none focus:border-breaking/50 search-glow transition-all"
+            className="w-full bg-black/50 border border-white/10 rounded-lg pl-12 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted font-medium focus:outline-none focus:border-breaking/50 search-glow transition-all"
             id="search-updates"
           />
           {localQuery && (

@@ -297,7 +297,7 @@ export default function TechPage() {
           {/* Search */}
           <div className="relative mb-3">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted"
+              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -314,7 +314,7 @@ export default function TechPage() {
               placeholder="Search tech news..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 search-glow transition-all"
+              className="w-full bg-black/50 border border-white/10 rounded-lg pl-12 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 search-glow transition-all"
               id="tech-search-input"
             />
           </div>
