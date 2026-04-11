@@ -27,8 +27,8 @@ export function NewsTicker({ items }: { items: TickerItem[] }) {
       onMouseLeave={() => setIsPaused(false)}
     >
       {/* Left label */}
-      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center px-3 bg-gradient-to-r from-breaking/20 via-breaking/10 to-transparent">
-        <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-breaking font-mono">
+      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center pl-3 pr-5 bg-gradient-to-r from-black via-black/95 to-transparent">
+        <span className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-breaking font-mono whitespace-nowrap">
           <span className="h-1.5 w-1.5 rounded-full bg-breaking animate-pulse-live" />
           Breaking
         </span>

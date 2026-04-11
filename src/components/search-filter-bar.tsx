@@ -66,7 +66,7 @@ export function SearchFilterBar({
             placeholder="Search updates..."
             value={localQuery}
             onChange={(e) => setLocalQuery(e.target.value)}
-            className="w-full bg-black/50 border border-white/10 rounded-lg pl-10 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted font-medium focus:outline-none focus:border-breaking/50 search-glow transition-all"
+            className="w-full bg-black/50 border border-white/10 rounded-lg pl-11 pr-10 py-2.5 text-sm text-foreground placeholder:text-muted font-medium focus:outline-none focus:border-breaking/50 search-glow transition-all"
             id="search-updates"
           />
           {localQuery && (
