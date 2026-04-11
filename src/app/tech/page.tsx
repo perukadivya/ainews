@@ -80,7 +80,7 @@ export default function TechPage() {
     [addToast]
   );
 
-  
+
   const fetchSidebar = useCallback(async () => {
     try {
       const res = await fetch("/api/daily-tech");
@@ -296,27 +296,39 @@ export default function TechPage() {
         <div className="glass-card rounded-xl p-4 border border-white/5 mb-6">
           {/* Search */}
           <div className="relative mb-3">
-            <svg
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
             <input
               type="text"
               placeholder="Search tech news..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg pl-12 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 search-glow transition-all"
+              className="w-full bg-black/50 border border-white/10 rounded-lg pl-4 pr-12 py-2.5 text-sm text-foreground placeholder:text-muted focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30 search-glow transition-all"
               id="tech-search-input"
             />
+            {!searchQuery ? (
+              <svg
+                className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            ) : (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted hover:text-foreground transition-colors"
+                aria-label="Clear search"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Category pills */}
@@ -329,11 +341,10 @@ export default function TechPage() {
                   <button
                     key={key}
                     onClick={() => handleCategoryToggle(key)}
-                    className={`filter-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border ${
-                      isActive
-                        ? `${config.bgColor} ${config.color} ${config.borderColor} shadow-lg`
-                        : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-white"
-                    }`}
+                    className={`filter-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium transition-all border ${isActive
+                      ? `${config.bgColor} ${config.color} ${config.borderColor} shadow-lg`
+                      : "bg-white/5 text-muted-foreground border-white/10 hover:bg-white/10 hover:text-white"
+                      }`}
                   >
                     <span className="text-xs">{config.emoji}</span>
                     {config.label}
@@ -384,75 +395,75 @@ export default function TechPage() {
           <div className="flex-1 min-w-0" role="feed" aria-busy={loading}>
             <ErrorBoundary>
               {loading ? (
-            <LoadingSkeleton />
-          ) : fetchError ? (
-            <div className="glass-card rounded-xl p-10 text-center border border-white/5">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 mb-5">
-                <span className="text-3xl">⚠️</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
-              <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-                {fetchError}
-              </p>
-              <button
-                onClick={() => {
-                  setLoading(true);
-                  fetchFeed();
-                }}
-                className="px-5 py-2.5 text-sm font-medium rounded-lg bg-cyan-500 text-white hover:bg-cyan-500/90 transition-all shadow-lg shadow-cyan-500/20"
-              >
-                ↻ Retry
-              </button>
-            </div>
-          ) : filteredUpdates.length === 0 && updates.length > 0 ? (
-            <div className="glass-card rounded-xl p-10 text-center border border-white/5">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 border border-white/10 mb-5">
-                <span className="text-3xl">🔍</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">
-                No Matching Updates
-              </h3>
-              <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-                No updates match your current search or filter criteria.
-              </p>
-              <button
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveCategories([]);
-                }}
-                className="px-5 py-2.5 text-sm font-medium rounded-lg bg-white/10 text-foreground hover:bg-white/15 transition-all border border-white/10"
-              >
-                Clear Filters
-              </button>
-            </div>
-          ) : updates.length === 0 ? (
-            <div className="glass-card rounded-xl p-10 text-center border border-white/5">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-5">
-                <span className="text-3xl">📡</span>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">
-                No Tech Updates Yet Today
-              </h3>
-              <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-                No tech news recorded yet today. Click &quot;Refresh Now&quot;
-                to fetch the latest tech news, or wait for the next update.
-              </p>
-              <button
-                onClick={triggerRefresh}
-                disabled={refreshing}
-                className="px-5 py-2.5 text-sm font-medium rounded-lg bg-cyan-500 text-white hover:bg-cyan-500/90 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
-                id="fetch-initial-tech-news"
-              >
-                {refreshing ? "Fetching..." : "⚡ Fetch Latest Tech News"}
-              </button>
-            </div>
-          ) : (
-            <div className="relative">
+                <LoadingSkeleton />
+              ) : fetchError ? (
+                <div className="glass-card rounded-xl p-10 text-center border border-white/5">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 mb-5">
+                    <span className="text-3xl">⚠️</span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                    {fetchError}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setLoading(true);
+                      fetchFeed();
+                    }}
+                    className="px-5 py-2.5 text-sm font-medium rounded-lg bg-cyan-500 text-white hover:bg-cyan-500/90 transition-all shadow-lg shadow-cyan-500/20"
+                  >
+                    ↻ Retry
+                  </button>
+                </div>
+              ) : filteredUpdates.length === 0 && updates.length > 0 ? (
+                <div className="glass-card rounded-xl p-10 text-center border border-white/5">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white/5 border border-white/10 mb-5">
+                    <span className="text-3xl">🔍</span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No Matching Updates
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                    No updates match your current search or filter criteria.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      setActiveCategories([]);
+                    }}
+                    className="px-5 py-2.5 text-sm font-medium rounded-lg bg-white/10 text-foreground hover:bg-white/15 transition-all border border-white/10"
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              ) : updates.length === 0 ? (
+                <div className="glass-card rounded-xl p-10 text-center border border-white/5">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-500/10 border border-cyan-500/20 mb-5">
+                    <span className="text-3xl">📡</span>
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">
+                    No Tech Updates Yet Today
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
+                    No tech news recorded yet today. Click &quot;Refresh Now&quot;
+                    to fetch the latest tech news, or wait for the next update.
+                  </p>
+                  <button
+                    onClick={triggerRefresh}
+                    disabled={refreshing}
+                    className="px-5 py-2.5 text-sm font-medium rounded-lg bg-cyan-500 text-white hover:bg-cyan-500/90 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
+                    id="fetch-initial-tech-news"
+                  >
+                    {refreshing ? "Fetching..." : "⚡ Fetch Latest Tech News"}
+                  </button>
+                </div>
+              ) : (
+                <div className="relative">
                   {/* Timeline line */}
                   <div className="hidden lg:block absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-cyan-500 via-cyan-500/20 to-transparent" />
 
                   {/* Updates */}
-                  <div className="space-y-4 lg:pl-12">
+                  <div className="space-y-4 lg:pl-10">
                     {filteredUpdates.map((update, index) => (
                       <TechUpdateCard
                         key={update.id}
@@ -463,16 +474,16 @@ export default function TechPage() {
                     ))}
                   </div>
                 </div>
-          )}
+              )}
             </ErrorBoundary>
           </div>
 
           {/* Right column: Sidebar */}
           <aside className="w-full lg:w-80 shrink-0 space-y-4">
-             <ErrorBoundary>
-                <TechCountdowns />
-                <DailyTopTen items={dailySummaries} />
-             </ErrorBoundary>
+            <ErrorBoundary>
+              <TechCountdowns />
+              <DailyTopTen items={dailySummaries} />
+            </ErrorBoundary>
           </aside>
         </div>
       </main>
