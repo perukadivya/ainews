@@ -12,6 +12,7 @@ import { LoadingSkeleton, SidebarSkeleton } from "@/components/loading-skeleton"
 import { SearchFilterBar } from "@/components/search-filter-bar";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useToast } from "@/components/toast-provider";
+import { NewsTicker } from "@/components/news-ticker";
 import { formatDateKey } from "@/lib/utils";
 
 interface LiveUpdate {
@@ -234,12 +235,30 @@ export default function HomePage() {
   const breakingCount = updates.filter(
     (u) => u.severity === "BREAKING"
   ).length;
+  const updateCount = updates.filter(
+    (u) => u.severity === "UPDATE"
+  ).length;
+  const analysisCount = updates.filter(
+    (u) => u.severity === "ANALYSIS"
+  ).length;
+  const diplomacyCount = updates.filter(
+    (u) => u.severity === "DIPLOMACY"
+  ).length;
   const todayDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+
+  // Severity distribution percentages
+  const total = updates.length || 1;
+  const severityDistribution = {
+    breaking: (breakingCount / total) * 100,
+    update: (updateCount / total) * 100,
+    analysis: (analysisCount / total) * 100,
+    diplomacy: (diplomacyCount / total) * 100,
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -312,8 +331,8 @@ export default function HomePage() {
         </div>
 
         {/* Stats Ticker */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <div className="glass-card rounded-lg px-3 py-2.5 border border-white/5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <div className="stat-card stat-card-updates glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
               Today&apos;s Updates
             </p>
@@ -321,7 +340,7 @@ export default function HomePage() {
               {updates.length}
             </p>
           </div>
-          <div className="glass-card rounded-lg px-3 py-2.5 border border-white/5">
+          <div className="stat-card stat-card-breaking glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
               Breaking
             </p>
@@ -329,7 +348,7 @@ export default function HomePage() {
               {breakingCount}
             </p>
           </div>
-          <div className="glass-card rounded-lg px-3 py-2.5 border border-white/5">
+          <div className="stat-card stat-card-conflicts glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
               Active Conflicts
             </p>
@@ -337,7 +356,7 @@ export default function HomePage() {
               5
             </p>
           </div>
-          <div className="glass-card rounded-lg px-3 py-2.5 border border-white/5">
+          <div className="stat-card stat-card-stories glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
               Top Stories
             </p>
@@ -346,6 +365,61 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+
+        {/* Severity Distribution Mini Bar */}
+        {updates.length > 0 && (
+          <div className="mb-6">
+            <div className="severity-bar w-full bg-black/40 rounded-full border border-white/5">
+              <span
+                className="bg-breaking rounded-l-full"
+                style={{ width: `${severityDistribution.breaking}%` }}
+                title={`Breaking: ${breakingCount}`}
+              />
+              <span
+                className="bg-update"
+                style={{ width: `${severityDistribution.update}%` }}
+                title={`Update: ${updateCount}`}
+              />
+              <span
+                className="bg-analysis"
+                style={{ width: `${severityDistribution.analysis}%` }}
+                title={`Analysis: ${analysisCount}`}
+              />
+              <span
+                className="bg-diplomacy rounded-r-full"
+                style={{ width: `${severityDistribution.diplomacy}%` }}
+                title={`Diplomacy: ${diplomacyCount}`}
+              />
+            </div>
+            <div className="flex items-center gap-4 mt-1.5">
+              <span className="flex items-center gap-1 text-[9px] text-muted-foreground font-mono">
+                <span className="h-1.5 w-1.5 rounded-full bg-breaking" />
+                Breaking {breakingCount}
+              </span>
+              <span className="flex items-center gap-1 text-[9px] text-muted-foreground font-mono">
+                <span className="h-1.5 w-1.5 rounded-full bg-update" />
+                Update {updateCount}
+              </span>
+              <span className="flex items-center gap-1 text-[9px] text-muted-foreground font-mono">
+                <span className="h-1.5 w-1.5 rounded-full bg-analysis" />
+                Analysis {analysisCount}
+              </span>
+              <span className="flex items-center gap-1 text-[9px] text-muted-foreground font-mono">
+                <span className="h-1.5 w-1.5 rounded-full bg-diplomacy" />
+                Diplomacy {diplomacyCount}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Breaking News Ticker */}
+        <NewsTicker
+          items={updates.map((u) => ({
+            id: u.id,
+            content: u.content,
+            severity: u.severity,
+          }))}
+        />
 
         {/* Search & Filter */}
         <SearchFilterBar

@@ -498,3 +498,94 @@ body::before {
   display: inline-flex;
   filter: drop-shadow(0 0 4px currentColor);
 }
+
+/* ===== TICKER ===== */
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.ticker-scroll {
+  animation: ticker-scroll 40s linear infinite;
+  width: max-content;
+}
+
+/* ===== ANIMATED BORDER for BREAKING cards ===== */
+@keyframes border-glow-sweep {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.breaking-border-animated {
+  position: relative;
+}
+.breaking-border-animated::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(220, 38, 38, 0.6) 25%,
+    rgba(239, 68, 68, 0.9) 50%,
+    rgba(220, 38, 38, 0.6) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: border-glow-sweep 3s linear infinite;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ===== REFRESH PROGRESS BAR ===== */
+@keyframes refresh-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+.refresh-progress-bar {
+  animation: refresh-progress 300s linear forwards;
+}
+
+/* ===== COUNTER FLASH ===== */
+@keyframes counter-flash {
+  0% { color: inherit; }
+  30% { color: rgba(220, 38, 38, 1); transform: scale(1.15); }
+  100% { color: inherit; transform: scale(1); }
+}
+
+.counter-flash {
+  animation: counter-flash 0.6s ease-out;
+}
+
+/* ===== STAT CARD HOVER GLOW ===== */
+.stat-card {
+  transition: all 0.3s ease;
+}
+.stat-card:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), 0 0 15px var(--stat-glow, rgba(255,255,255,0.05));
+  transform: translateY(-2px);
+}
+.stat-card-breaking { --stat-glow: rgba(220, 38, 38, 0.15); }
+.stat-card-updates { --stat-glow: rgba(255, 255, 255, 0.08); }
+.stat-card-conflicts { --stat-glow: rgba(59, 130, 246, 0.12); }
+.stat-card-stories { --stat-glow: rgba(139, 92, 246, 0.12); }
+
+/* ===== SEVERITY MINI BAR ===== */
+.severity-bar {
+  height: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  display: flex;
+  gap: 1px;
+}
+.severity-bar > span {
+  transition: width 0.8s ease-out;
+}

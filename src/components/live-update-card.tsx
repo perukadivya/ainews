@@ -16,6 +16,7 @@ interface LiveUpdateCardProps {
 }
 
 export function LiveUpdateCard({
+  id,
   timestamp,
   content,
   source,
@@ -83,7 +84,8 @@ export function LiveUpdateCard({
 
   return (
     <article
-      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group ${severityBorders[severity]} ${severityGlows[severity]}`}
+      id={`update-${id}`}
+      className={`animate-fade-in-up card-hover glass-card rounded-xl p-5 relative group ${severityBorders[severity]} ${severityGlows[severity]} ${severity === "BREAKING" ? "breaking-border-animated" : ""}`}
       style={{ animationDelay: `${index * 0.05}s` }}
       aria-label={`${severity} update from ${source}`}
     >
