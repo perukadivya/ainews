@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cron:hourly": "npx tsx scripts/cron-hourly-all.ts",
+    "cron:daily": "npx tsx scripts/cron-daily-all.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
