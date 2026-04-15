@@ -1,9 +1,9 @@
-import { generateDailyTop10, detectCountdowns } from "@/lib/gemini";
+import { generateFinanceDailyTop10, detectFinanceCountdowns } from "@/lib/gemini";
 import {
-  getLiveUpdates,
-  insertDailySummary,
-  getDailySummaries,
-  insertCountdown,
+  getFinanceUpdates,
+  insertFinanceDailySummary,
+  getFinanceDailySummaries,
+  insertFinanceCountdown,
 } from "@/lib/db";
 import { formatDateKey } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ async function withRetry<T>(
 }
 
 async function run() {
-  console.log("Starting daily war summary...");
+  console.log("Starting daily finance summary...");
 
   // Hard 15-minute timeout — kill process if it hangs
   const TIMEOUT_MS = 15 * 60 * 1000;
@@ -45,18 +45,18 @@ async function run() {
   try {
     const today = formatDateKey(new Date());
 
-    const existing = await getDailySummaries(today);
+    const existing = await getFinanceDailySummaries(today);
     if (existing.length > 0) {
-      console.log("War daily summaries already exist for today");
+      console.log("Finance daily summaries already exist for today");
       return;
     }
 
-    const todayUpdates = await getLiveUpdates(today, 100);
+    const todayUpdates = await getFinanceUpdates(today, 100);
 
-    const top10 = await withRetry(() => generateDailyTop10(todayUpdates));
+    const top10 = await withRetry(() => generateFinanceDailyTop10(todayUpdates));
 
     for (const item of top10) {
-      await insertDailySummary(
+      await insertFinanceDailySummary(
         today,
         item.rank,
         item.title,
@@ -65,18 +65,27 @@ async function run() {
       );
     }
 
-    const countdowns = await withRetry(() => detectCountdowns(todayUpdates));
-
-    for (const cd of countdowns) {
-      await insertCountdown(cd.title, cd.description, cd.targetTime);
-    }
-
-    console.log("Successfully completed daily war summary", {
+    console.log("Successfully completed daily finance summary", {
       summariesCreated: top10.length,
-      countdownsCreated: countdowns.length
     });
+
+    try {
+      const countdowns = await withRetry(() => detectFinanceCountdowns(todayUpdates));
+      for (const cd of countdowns) {
+        await insertFinanceCountdown(
+          cd.title,
+          cd.description,
+          cd.time,
+          cd.emoji || "📊",
+          cd.type || "upcoming"
+        );
+      }
+      console.log(`Successfully added ${countdowns.length} finance events/countdowns`);
+    } catch (e) {
+      console.error("Failed to detect finance countdowns:", e);
+    }
   } catch (error) {
-    console.error("Daily cron error:", error);
+    console.error("Finance daily cron error:", error);
     process.exit(1);
   }
 }

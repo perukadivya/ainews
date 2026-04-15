@@ -18,6 +18,9 @@
   --color-diplomacy: #8b5cf6;
   --color-diplomacy-glow: #8b5cf640;
 
+  --color-finance: #10b981;
+  --color-finance-glow: #10b98140;
+
   --color-accent: #dc2626;
   --color-accent-foreground: #ffffff;
   --color-border: #1f1f1f;
@@ -354,6 +357,13 @@ body::before {
   background-clip: text;
 }
 
+.text-gradient-green {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 /* Timeline line */
 .timeline-line {
   position: relative;
@@ -577,6 +587,7 @@ body::before {
 .stat-card-updates { --stat-glow: rgba(255, 255, 255, 0.08); }
 .stat-card-conflicts { --stat-glow: rgba(59, 130, 246, 0.12); }
 .stat-card-stories { --stat-glow: rgba(139, 92, 246, 0.12); }
+.stat-card-finance { --stat-glow: rgba(16, 185, 129, 0.15); }
 
 /* ===== SEVERITY MINI BAR ===== */
 .severity-bar {

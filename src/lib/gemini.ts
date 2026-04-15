@@ -39,14 +39,14 @@ async function generateContentWithFallback(prompt: string, maxRetries = 3): Prom
         console.warn(`All ${maxRetries} Gemini attempts failed. Switching to fallback Nvidia model...`);
         break;
       }
-      await delay(5000 * attempt); // Exponential backoff ... wait 5s, 10s...
+      await delay(90000); // 1.5 minute wait between retries to handle API rate limits
     }
   }
 
   // Fallback to Nvidia / Z-AI model
   const apiKey = process.env.NVIDIA_API_KEY || process.env.OPENAI_API_KEY || "";
   const baseUrl = process.env.NVIDIA_BASE_URL || "https://integrate.api.nvidia.com/v1/chat/completions";
-  const fallbackModel = process.env.FALLBACK_MODEL || "z-ai/glm5";
+  const fallbackModel = process.env.FALLBACK_MODEL || "minimaxai/minimax-m2.7";
 
   if (!apiKey) {
     throw new Error("No NVIDIA_API_KEY set for fallback model. Please set it in Vercel.");
@@ -488,6 +488,226 @@ Rules:
     return JSON.parse(cleaned) as GeminiTechEvent[];
   } catch (error) {
     console.error("Gemini tech countdown detection error:", error);
+    return [];
+  }
+}
+
+// ====== FINANCE & MARKETS ======
+
+export interface GeminiFinanceUpdate {
+  category: "markets" | "crypto" | "commodities" | "central_banks" | "earnings" | "ipo_ma" | "regulation" | "forex" | "general";
+  summary: string;
+  bulletPoints: string[];
+  source: string;
+  link?: string;
+}
+
+/**
+ * Summarize RSS articles about finance and markets
+ */
+export async function summarizeFinanceArticles(
+  articles: Array<{ title: string; content: string; link: string }>
+): Promise<GeminiFinanceUpdate[]> {
+  const articleText = articles
+    .map((a, i) => `Article ${i + 1}: ${a.title}\nURL: ${a.link}\n${a.content}`)
+    .join("\n\n---\n\n");
+
+  const prompt = `You are a senior financial journalist covering global markets, economics, and finance.
+
+Analyze these financial news articles and create concise updates:
+
+${articleText}
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of distinct finance updates (generate between 2 to 6 updates depending on how many distinct stories exist):
+[
+  {
+    "category": "markets" or "crypto" or "commodities" or "central_banks" or "earnings" or "ipo_ma" or "regulation" or "forex" or "general",
+    "summary": "A 1-2 sentence summary of the key development",
+    "bulletPoints": ["key point 1", "key point 2", "key point 3"],
+    "source": "Bloomberg",
+    "link": "https://example.com/article"
+  }
+]
+
+Rules:
+- Use "markets" for stock market moves, indices, trading
+- Use "crypto" for cryptocurrency, bitcoin, ethereum, blockchain
+- Use "commodities" for oil, gold, metals, agriculture
+- Use "central_banks" for Fed, ECB, interest rates, monetary policy
+- Use "earnings" for company earnings reports, revenue
+- Use "ipo_ma" for IPOs, mergers, acquisitions, deals
+- Use "regulation" for financial regulation, SEC, compliance
+- Use "forex" for currency markets, exchange rates
+- Keep each bullet point concise (1 line)
+- Focus on the most significant and recent developments
+- If an article URL is available, include it in the link field
+- 2-4 bullet points per update`;
+
+  try {
+    const text = await generateContentWithFallback(prompt);
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (error) {
+    console.error("Finance summarization error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Direct finance news query - fallback when RSS has no relevant articles
+ */
+export async function directFinanceQuery(): Promise<GeminiFinanceUpdate[]> {
+  const now = new Date().toISOString();
+  const prompt = `You are a senior financial journalist. The current date/time is ${now}.
+
+What are the latest and most significant developments in global finance and markets? Cover topics including:
+- US and global stock markets (S&P 500, NASDAQ, Dow, international indices)
+- Cryptocurrency markets (Bitcoin, Ethereum, major altcoins)
+- Commodities (oil, gold, natural gas, agriculture)
+- Central bank decisions (Fed, ECB, BoJ interest rates, monetary policy)
+- Major earnings reports
+- M&A activity and IPOs
+- Financial regulation changes
+- Forex and currency markets
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON). Return an ARRAY of 3-5 distinct updates:
+[
+  {
+    "category": "markets" or "crypto" or "commodities" or "central_banks" or "earnings" or "ipo_ma" or "regulation" or "forex" or "general",
+    "summary": "A 1-2 sentence summary of the development",
+    "bulletPoints": ["point 1", "point 2", "point 3"],
+    "source": "AI Finance Brief"
+  }
+]
+
+Rules:
+- Generate distinct updates covering different finance sectors
+- Be factual and cite what you know about current developments
+- 2-4 bullet points per update
+- Focus on what is happening NOW, not historical events`;
+
+  try {
+    const text = await generateContentWithFallback(prompt);
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch (error) {
+    console.error("Finance direct query error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Generate daily top 10 finance summary
+ */
+export async function generateFinanceDailyTop10(
+  todayUpdates: Array<{ content: string; bullet_points: string | null; category: string }>
+): Promise<GeminiDailyItem[]> {
+  const updatesText = todayUpdates
+    .map(
+      (u, i) =>
+        `Update ${i + 1} [${u.category}]: ${u.content}
+Details: ${u.bullet_points || "N/A"}`
+    )
+    .join("\n\n");
+
+  const prompt = `You are a senior finance editor. Based on today's financial news updates, create a ranked Top 10 finance summary covering all market sectors.
+
+Today's updates:
+${updatesText}
+
+${todayUpdates.length === 0
+      ? "No updates today. Create a top 10 based on what you know about the most significant financial news of today."
+      : ""
+    }
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
+[
+  {
+    "rank": 1,
+    "title": "Short headline",
+    "summary": "2-3 sentence summary of this story",
+    "category": "markets"
+  },
+  ...up to 10 items
+]
+
+Rules:
+- Category should be one of "markets", "crypto", "commodities", "central_banks", "earnings", "ipo_ma", "regulation", "forex", "general"
+- Rank by impact on global financial markets
+- Each title should be a compelling headline
+- If there aren't 10 distinct stories, include as many as are meaningful (minimum 5)`;
+
+  try {
+    const text = await generateContentWithFallback(prompt);
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleaned) as GeminiDailyItem[];
+  } catch (error) {
+    console.error("Finance daily top 10 error:", error);
+    throw error;
+  }
+}
+
+export interface GeminiFinanceEvent {
+  title: string;
+  description: string;
+  time: string; // ISO 8601
+  emoji: string;
+  type: "upcoming" | "occurred";
+}
+
+/**
+ * Detect countdowns/events from recent finance news
+ */
+export async function detectFinanceCountdowns(
+  recentUpdates: Array<{ content: string; bullet_points: string | null }>
+): Promise<GeminiFinanceEvent[]> {
+  const now = new Date().toISOString();
+  const updatesText = recentUpdates
+    .map((u, i) => `${i + 1}. ${u.content}\n${u.bullet_points || ""}`)
+    .join("\n\n");
+
+  const prompt = `You are an AI tracking financial markets for major upcoming events, deadlines, and market-moving dates.
+
+Current date/time: ${now}
+
+Recent updates:
+${updatesText}
+
+Find any mentioned major financial events from the news. Distinguish between ones that just HAPPENED recently ("occurred") and ones happening in the FUTURE ("upcoming").
+
+Examples of events to detect:
+- Fed interest rate decisions
+- Major earnings report dates (Apple, NVIDIA, etc.)
+- IPO listing dates
+- Economic data releases (jobs report, CPI, GDP)
+- Sanctions or tariff deadlines
+- Debt ceiling deadlines
+
+Respond in this exact JSON format (no markdown, no code blocks, just raw JSON):
+[
+  {
+    "title": "Short title (e.g. 'Fed Rate Decision' or 'NVIDIA Earnings')",
+    "description": "1 short sentence about the event",
+    "time": "ISO 8601 datetime string",
+    "emoji": "1 relevant emoji (e.g. 📊, 💰, 🏦)",
+    "type": "upcoming" or "occurred"
+  }
+]
+
+Rules:
+- Only include highly significant financial events
+- Time should be an exact ISO 8601 string
+- If no events are found, return an empty array: []
+- Be conservative — don't invent fake events`;
+
+  try {
+    const text = await generateContentWithFallback(prompt);
+    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+    return JSON.parse(cleaned) as GeminiFinanceEvent[];
+  } catch (error) {
+    console.error("Finance countdown detection error:", error);
     return [];
   }
 }

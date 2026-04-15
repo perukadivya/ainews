@@ -9,8 +9,8 @@ import { formatDateKey } from "@/lib/utils";
 
 async function withRetry<T>(
   fn: () => Promise<T>,
-  maxRetries = 1,
-  initialDelay = 2000
+  maxRetries = 3,
+  initialDelay = 90000
 ): Promise<T> {
   let lastError: Error | unknown;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -34,8 +34,8 @@ async function withRetry<T>(
 async function run() {
   console.log("Starting daily tech summary...");
 
-  // Hard 9-minute timeout — kill process if it hangs
-  const TIMEOUT_MS = 9 * 60 * 1000;
+  // Hard 15-minute timeout — kill process if it hangs
+  const TIMEOUT_MS = 15 * 60 * 1000;
   const timeoutId = setTimeout(() => {
     console.error(`FATAL: Script exceeded ${TIMEOUT_MS / 60000} minute timeout. Force exiting.`);
     process.exit(1);

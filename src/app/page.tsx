@@ -353,7 +353,7 @@ export default function HomePage() {
               Active Conflicts
             </p>
             <p className="text-lg font-bold font-mono tabular-nums text-foreground mt-0.5">
-              5
+              {countdowns.length}
             </p>
           </div>
           <div className="stat-card stat-card-stories glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">

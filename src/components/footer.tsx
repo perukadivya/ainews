@@ -5,12 +5,15 @@ import { usePathname } from "next/navigation";
 export function Footer() {
   const pathname = usePathname();
   const isTech = pathname.startsWith("/tech");
+  const isFinance = pathname.startsWith("/finance");
 
-  const accentColor = isTech ? "text-cyan-400" : "text-breaking";
-  const accentBg = isTech
+  const accentColor = isFinance ? "text-emerald-400" : isTech ? "text-cyan-400" : "text-breaking";
+  const accentBg = isFinance
+    ? "bg-gradient-to-br from-emerald-500 to-green-600"
+    : isTech
     ? "bg-gradient-to-br from-cyan-500 to-blue-600"
     : "bg-gradient-to-br from-breaking to-red-900";
-  const bulletColor = isTech ? "text-cyan-400" : "text-breaking";
+  const bulletColor = isFinance ? "text-emerald-400" : isTech ? "text-cyan-400" : "text-breaking";
 
   return (
     <footer className="border-t border-white/5 mt-12 bg-black/40">
@@ -29,8 +32,8 @@ export function Footer() {
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              AI-powered global news tracker. Data aggregated from BBC, Reuters,
-              Al Jazeera, TechCrunch RSS &amp; Gemini AI analysis.
+              AI-powered global news tracker. Data aggregated from BBC, Bloomberg,
+              CNBC, TechCrunch RSS &amp; Gemini AI analysis.
             </p>
           </div>
           {/* Info */}

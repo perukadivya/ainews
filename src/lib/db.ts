@@ -1,6 +1,7 @@
 import { createClient, type Client } from "@libsql/client";
 
 let db: Client | null = null;
+let dbInitialized = false;
 
 export function getDb(): Client {
   if (db) return db;
@@ -13,8 +14,9 @@ export function getDb(): Client {
   return db;
 }
 
-// Initialize tables
+// Initialize tables (only runs once per process)
 export async function initDb(): Promise<void> {
+  if (dbInitialized) return;
   const db = getDb();
 
   await db.executeMultiple(`
@@ -104,7 +106,54 @@ export async function initDb(): Promise<void> {
       auto_detected INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS finance_updates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+      content TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'finance-rss',
+      category TEXT NOT NULL DEFAULT 'general',
+      bullet_points TEXT,
+      link TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS finance_rss_cache (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guid TEXT UNIQUE,
+      title TEXT,
+      link TEXT,
+      pub_date TEXT,
+      content TEXT,
+      processed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS finance_daily_summaries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date TEXT NOT NULL,
+      rank INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      source_url TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS finance_countdowns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      description TEXT,
+      target_time TEXT NOT NULL,
+      emoji TEXT NOT NULL DEFAULT '📊',
+      type TEXT NOT NULL DEFAULT 'upcoming',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      auto_detected INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
+
+  dbInitialized = true;
 }
 
 // Types
@@ -485,4 +534,188 @@ export async function getActiveTechCountdowns(): Promise<TechCountdown[]> {
     args: [],
   });
   return result.rows as unknown as TechCountdown[];
+}
+
+// ====== FINANCE & MARKETS ======
+
+export interface FinanceUpdate {
+  id: number;
+  timestamp: string;
+  content: string;
+  source: string;
+  category: string;
+  bullet_points: string | null;
+  link: string | null;
+  created_at: string;
+}
+
+export async function insertFinanceUpdate(
+  content: string,
+  source: string,
+  category: string,
+  bulletPoints: string | null,
+  link: string | null
+): Promise<FinanceUpdate> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `INSERT INTO finance_updates (content, source, category, bullet_points, link) VALUES (?, ?, ?, ?, ?)`,
+    args: [content, source, category, bulletPoints, link],
+  });
+  const row = await db.execute({
+    sql: "SELECT * FROM finance_updates WHERE id = ?",
+    args: [result.lastInsertRowid!],
+  });
+  return row.rows[0] as unknown as FinanceUpdate;
+}
+
+export async function getFinanceUpdates(
+  date?: string,
+  limit = 50,
+  offset = 0
+): Promise<FinanceUpdate[]> {
+  const db = getDb();
+  await initDb();
+  if (date) {
+    const result = await db.execute({
+      sql: `SELECT * FROM finance_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [date, limit, offset],
+    });
+    return result.rows as unknown as FinanceUpdate[];
+  }
+  const result = await db.execute({
+    sql: `SELECT * FROM finance_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+    args: [limit, offset],
+  });
+  return result.rows as unknown as FinanceUpdate[];
+}
+
+export async function cacheFinanceRSSItem(
+  guid: string,
+  title: string,
+  link: string,
+  pubDate: string,
+  content: string
+): Promise<boolean> {
+  const db = getDb();
+  await initDb();
+  try {
+    await db.execute({
+      sql: `INSERT OR IGNORE INTO finance_rss_cache (guid, title, link, pub_date, content) VALUES (?, ?, ?, ?, ?)`,
+      args: [guid, title, link, pubDate, content],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getUnprocessedFinanceRSSItems(): Promise<
+  Array<{ id: number; title: string; content: string; link: string; pub_date: string }>
+> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM finance_rss_cache WHERE processed = 0 ORDER BY pub_date DESC`,
+    args: [],
+  });
+  return result.rows as unknown as Array<{
+    id: number;
+    title: string;
+    content: string;
+    link: string;
+    pub_date: string;
+  }>;
+}
+
+export async function markFinanceRSSItemsProcessed(ids: number[]): Promise<void> {
+  const db = getDb();
+  await initDb();
+  const placeholders = ids.map(() => "?").join(",");
+  await db.execute({
+    sql: `UPDATE finance_rss_cache SET processed = 1 WHERE id IN (${placeholders})`,
+    args: ids,
+  });
+}
+
+export interface FinanceDailySummary {
+  id: number;
+  date: string;
+  rank: number;
+  title: string;
+  summary: string;
+  category: string;
+  source_url: string | null;
+  created_at: string;
+}
+
+export async function insertFinanceDailySummary(
+  date: string,
+  rank: number,
+  title: string,
+  summary: string,
+  category: string
+): Promise<void> {
+  const db = getDb();
+  await initDb();
+  await db.execute({
+    sql: `INSERT INTO finance_daily_summaries (date, rank, title, summary, category) VALUES (?, ?, ?, ?, ?)`,
+    args: [date, rank, title, summary, category],
+  });
+}
+
+export async function getFinanceDailySummaries(date: string): Promise<FinanceDailySummary[]> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM finance_daily_summaries WHERE date = ? ORDER BY rank ASC`,
+    args: [date],
+  });
+  return result.rows as unknown as FinanceDailySummary[];
+}
+
+export async function getFinanceAvailableDates(): Promise<string[]> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute(
+    `SELECT DISTINCT date(timestamp) as date FROM finance_updates ORDER BY date DESC`
+  );
+  return result.rows.map((r: any) => r.date as string);
+}
+
+export interface FinanceCountdown {
+  id: number;
+  title: string;
+  description: string | null;
+  target_time: string;
+  emoji: string;
+  type: "occurred" | "upcoming";
+  is_active: number;
+  auto_detected: number;
+  created_at: string;
+}
+
+export async function insertFinanceCountdown(
+  title: string,
+  description: string,
+  targetTime: string,
+  emoji: string,
+  type: string
+): Promise<void> {
+  const db = getDb();
+  await initDb();
+  await db.execute({
+    sql: `INSERT INTO finance_countdowns (title, description, target_time, emoji, type) VALUES (?, ?, ?, ?, ?)`,
+    args: [title, description, targetTime, emoji, type],
+  });
+}
+
+export async function getActiveFinanceCountdowns(): Promise<FinanceCountdown[]> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT * FROM finance_countdowns WHERE is_active = 1 ORDER BY target_time DESC LIMIT 10`,
+    args: [],
+  });
+  return result.rows as unknown as FinanceCountdown[];
 }

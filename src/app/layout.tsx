@@ -4,9 +4,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://ainews.kprsnt.in"),
-  title: "AINews — War & Conflict Live Tracker",
+  title: "AINews — Global Intelligence Tracker",
   description:
-    "Real-time global war and conflict tracker with hourly updates, daily summaries, and countdown timers. Stay informed with AI-powered news aggregation from BBC, Reuters, and Al Jazeera.",
+    "Real-time global news tracker covering wars, technology, and financial markets. Hourly AI-powered updates, daily summaries, and live countdowns from BBC, Bloomberg, TechCrunch & Gemini AI.",
   keywords: [
     "war news",
     "live blog",
@@ -16,10 +16,11 @@ export const metadata: Metadata = {
     "geopolitical news",
     "international relations",
     "AI news summary",
-    "Ukraine war",
-    "Gaza conflict",
-    "Iran war",
-    "Sudan civil war",
+    "tech news tracker",
+    "finance news",
+    "stock market tracker",
+    "crypto news",
+    "AI",
   ],
   authors: [{ name: "AINews Tracker" }],
   creator: "AINews Tracker",
@@ -33,9 +34,9 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "AINews — War & Conflict Live Tracker",
+    title: "AINews — Global Intelligence Tracker",
     description:
-      "Real-time conflict tracker with hourly updates and AI-powered summaries",
+      "Real-time tracker covering wars, tech, and markets with AI-powered summaries",
     url: "https://ainews.kprsnt.in",
     siteName: "AINews Tracker",
     locale: "en_US",
@@ -43,9 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AINews — War & Conflict Live Tracker",
+    title: "AINews — Global Intelligence Tracker",
     description:
-      "Real-time conflict tracker with hourly updates and AI-powered summaries",
+      "Real-time tracker covering wars, tech, and markets with AI-powered summaries",
     creator: "@AINewsTracker",
   },
   robots: {
