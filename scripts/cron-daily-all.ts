@@ -1,7 +1,7 @@
 /**
  * Unified Daily Cron — Runs War, Tech, and Finance daily summaries sequentially.
- * Each section has a 30-minute gap to avoid Gemini API rate limits.
- * Timeout: 45 min total (3 sections × ~15 min each, but typically much faster).
+ * Each section has a 5-minute gap to avoid Gemini API rate limits.
+ * Timeout: 40 min total.
  */
 
 // ====== IMPORTS ======
@@ -191,8 +191,8 @@ async function run() {
   console.log(`║   ${new Date().toISOString()}       ║`);
   console.log("╚═══════════════════════════════════════════╝");
 
-  // Hard 45-minute timeout for the entire run
-  const TIMEOUT_MS = 45 * 60 * 1000;
+  // Hard 40-minute timeout for the entire run
+  const TIMEOUT_MS = 40 * 60 * 1000;
   const timeoutId = setTimeout(() => {
     console.error(`\nFATAL: Script exceeded ${TIMEOUT_MS / 60000} minute timeout. Force exiting.`);
     process.exit(1);
@@ -203,12 +203,12 @@ async function run() {
 
   // Run sequentially with 30-MINUTE gaps between each to avoid Gemini API rate limits
   results.war = await runWarDaily();
-  console.log("\n  ⏳ Waiting 30 minutes before next section (API rate limit cooldown)...\n");
-  await delay(30 * 60 * 1000); // 30 minutes
+  console.log("\n  ⏳ Waiting 5 minutes before next section (API rate limit cooldown)...\n");
+  await delay(5 * 60 * 1000); // 5 minutes
 
   results.tech = await runTechDaily();
-  console.log("\n  ⏳ Waiting 30 minutes before next section (API rate limit cooldown)...\n");
-  await delay(30 * 60 * 1000); // 30 minutes
+  console.log("\n  ⏳ Waiting 5 minutes before next section (API rate limit cooldown)...\n");
+  await delay(5 * 60 * 1000); // 5 minutes
 
   results.finance = await runFinanceDaily();
 
