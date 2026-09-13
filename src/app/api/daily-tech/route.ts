@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getTechDailySummaries } from "@/lib/db";
+import { getTechDailySummaries, getLatestTechDailySummaryDate } from "@/lib/db";
 import { formatDateKey } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -9,12 +9,27 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const dateParam = searchParams.get("date");
     
-    // Default to today if no date provided
-    const date = dateParam || formatDateKey(new Date());
+    let resolvedDate = dateParam || undefined;
+    if (!resolvedDate || resolvedDate === "latest") {
+      resolvedDate = (await getLatestTechDailySummaryDate()) || formatDateKey(new Date());
+    }
 
-    const summaries = await getTechDailySummaries(date);
+    let summaries = await getTechDailySummaries(resolvedDate);
+
+    // If requested date had 0 summaries, fallback to latest
+    if (summaries.length === 0) {
+      const latestDate = await getLatestTechDailySummaryDate();
+      if (latestDate && latestDate !== resolvedDate) {
+        resolvedDate = latestDate;
+        summaries = await getTechDailySummaries(latestDate);
+      }
+    }
     
-    return NextResponse.json({ summaries });
+    return NextResponse.json({
+      date: resolvedDate,
+      summaries,
+      count: summaries.length,
+    });
   } catch (error) {
     console.error("Daily Tech API error:", error);
     return NextResponse.json(

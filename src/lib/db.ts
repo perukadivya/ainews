@@ -208,6 +208,26 @@ export async function insertLiveUpdate(
   return row.rows[0] as unknown as LiveUpdate;
 }
 
+export async function getLatestLiveUpdateDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date(timestamp) as d FROM live_updates ORDER BY timestamp DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.d as string) || null;
+}
+
+export async function getLatestDailySummaryDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date FROM daily_summaries ORDER BY date DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.date as string) || null;
+}
+
 export async function getLiveUpdates(
   date?: string,
   limit = 50,
@@ -215,12 +235,23 @@ export async function getLiveUpdates(
 ): Promise<LiveUpdate[]> {
   const db = getDb();
   await initDb();
-  if (date) {
+  if (date && date !== "latest") {
     const result = await db.execute({
       sql: `SELECT * FROM live_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
       args: [date, limit, offset],
     });
     return result.rows as unknown as LiveUpdate[];
+  }
+  // When no date or "latest" is passed, filter by the latest date with updates
+  const latestDate = await getLatestLiveUpdateDate();
+  if (latestDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM live_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [latestDate, limit, offset],
+    });
+    if (result.rows.length > 0) {
+      return result.rows as unknown as LiveUpdate[];
+    }
   }
   const result = await db.execute({
     sql: `SELECT * FROM live_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
@@ -244,12 +275,23 @@ export async function insertDailySummary(
   });
 }
 
-export async function getDailySummaries(date: string): Promise<DailySummary[]> {
+export async function getDailySummaries(date?: string): Promise<DailySummary[]> {
   const db = getDb();
   await initDb();
+  let targetDate = date;
+  if (!targetDate || targetDate === "latest") {
+    targetDate = (await getLatestDailySummaryDate()) || undefined;
+  }
+  if (targetDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM daily_summaries WHERE date = ? ORDER BY rank ASC`,
+      args: [targetDate],
+    });
+    return result.rows as unknown as DailySummary[];
+  }
   const result = await db.execute({
-    sql: `SELECT * FROM daily_summaries WHERE date = ? ORDER BY rank ASC`,
-    args: [date],
+    sql: `SELECT * FROM daily_summaries ORDER BY date DESC, rank ASC LIMIT 10`,
+    args: [],
   });
   return result.rows as unknown as DailySummary[];
 }
@@ -278,6 +320,14 @@ export async function getActiveCountdowns(): Promise<Countdown[]> {
     sql: `SELECT * FROM countdowns WHERE is_active = 1 ORDER BY target_time ASC`,
     args: [],
   });
+  if (result.rows.length === 0) {
+    // When paused, return latest recorded countdowns so UI remains informative
+    const fallback = await db.execute({
+      sql: `SELECT * FROM countdowns ORDER BY target_time DESC LIMIT 5`,
+      args: [],
+    });
+    return fallback.rows as unknown as Countdown[];
+  }
   return result.rows as unknown as Countdown[];
 }
 
@@ -381,6 +431,26 @@ export async function insertTechUpdate(
   return row.rows[0] as unknown as TechUpdate;
 }
 
+export async function getLatestTechUpdateDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date(timestamp) as d FROM tech_updates ORDER BY timestamp DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.d as string) || null;
+}
+
+export async function getLatestTechDailySummaryDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date FROM tech_daily_summaries ORDER BY date DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.date as string) || null;
+}
+
 export async function getTechUpdates(
   date?: string,
   limit = 50,
@@ -388,12 +458,23 @@ export async function getTechUpdates(
 ): Promise<TechUpdate[]> {
   const db = getDb();
   await initDb();
-  if (date) {
+  if (date && date !== "latest") {
     const result = await db.execute({
       sql: `SELECT * FROM tech_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
       args: [date, limit, offset],
     });
     return result.rows as unknown as TechUpdate[];
+  }
+  // When no date or "latest" is passed, filter by the latest date with updates
+  const latestDate = await getLatestTechUpdateDate();
+  if (latestDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM tech_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [latestDate, limit, offset],
+    });
+    if (result.rows.length > 0) {
+      return result.rows as unknown as TechUpdate[];
+    }
   }
   const result = await db.execute({
     sql: `SELECT * FROM tech_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
@@ -477,12 +558,23 @@ export async function insertTechDailySummary(
   });
 }
 
-export async function getTechDailySummaries(date: string): Promise<TechDailySummary[]> {
+export async function getTechDailySummaries(date?: string): Promise<TechDailySummary[]> {
   const db = getDb();
   await initDb();
+  let targetDate = date;
+  if (!targetDate || targetDate === "latest") {
+    targetDate = (await getLatestTechDailySummaryDate()) || undefined;
+  }
+  if (targetDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM tech_daily_summaries WHERE date = ? ORDER BY rank ASC`,
+      args: [targetDate],
+    });
+    return result.rows as unknown as TechDailySummary[];
+  }
   const result = await db.execute({
-    sql: `SELECT * FROM tech_daily_summaries WHERE date = ? ORDER BY rank ASC`,
-    args: [date],
+    sql: `SELECT * FROM tech_daily_summaries ORDER BY date DESC, rank ASC LIMIT 10`,
+    args: [],
   });
   return result.rows as unknown as TechDailySummary[];
 }
@@ -533,6 +625,13 @@ export async function getActiveTechCountdowns(): Promise<TechCountdown[]> {
     sql: `SELECT * FROM tech_countdowns WHERE is_active = 1 ORDER BY target_time DESC LIMIT 10`,
     args: [],
   });
+  if (result.rows.length === 0) {
+    const fallback = await db.execute({
+      sql: `SELECT * FROM tech_countdowns ORDER BY target_time DESC LIMIT 10`,
+      args: [],
+    });
+    return fallback.rows as unknown as TechCountdown[];
+  }
   return result.rows as unknown as TechCountdown[];
 }
 
@@ -569,6 +668,26 @@ export async function insertFinanceUpdate(
   return row.rows[0] as unknown as FinanceUpdate;
 }
 
+export async function getLatestFinanceUpdateDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date(timestamp) as d FROM finance_updates ORDER BY timestamp DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.d as string) || null;
+}
+
+export async function getLatestFinanceDailySummaryDate(): Promise<string | null> {
+  const db = getDb();
+  await initDb();
+  const result = await db.execute({
+    sql: `SELECT date FROM finance_daily_summaries ORDER BY date DESC LIMIT 1`,
+    args: [],
+  });
+  return (result.rows[0]?.date as string) || null;
+}
+
 export async function getFinanceUpdates(
   date?: string,
   limit = 50,
@@ -576,12 +695,23 @@ export async function getFinanceUpdates(
 ): Promise<FinanceUpdate[]> {
   const db = getDb();
   await initDb();
-  if (date) {
+  if (date && date !== "latest") {
     const result = await db.execute({
       sql: `SELECT * FROM finance_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
       args: [date, limit, offset],
     });
     return result.rows as unknown as FinanceUpdate[];
+  }
+  // When no date or "latest" is passed, filter by the latest date with updates
+  const latestDate = await getLatestFinanceUpdateDate();
+  if (latestDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM finance_updates WHERE date(timestamp) = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
+      args: [latestDate, limit, offset],
+    });
+    if (result.rows.length > 0) {
+      return result.rows as unknown as FinanceUpdate[];
+    }
   }
   const result = await db.execute({
     sql: `SELECT * FROM finance_updates ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
@@ -664,12 +794,23 @@ export async function insertFinanceDailySummary(
   });
 }
 
-export async function getFinanceDailySummaries(date: string): Promise<FinanceDailySummary[]> {
+export async function getFinanceDailySummaries(date?: string): Promise<FinanceDailySummary[]> {
   const db = getDb();
   await initDb();
+  let targetDate = date;
+  if (!targetDate || targetDate === "latest") {
+    targetDate = (await getLatestFinanceDailySummaryDate()) || undefined;
+  }
+  if (targetDate) {
+    const result = await db.execute({
+      sql: `SELECT * FROM finance_daily_summaries WHERE date = ? ORDER BY rank ASC`,
+      args: [targetDate],
+    });
+    return result.rows as unknown as FinanceDailySummary[];
+  }
   const result = await db.execute({
-    sql: `SELECT * FROM finance_daily_summaries WHERE date = ? ORDER BY rank ASC`,
-    args: [date],
+    sql: `SELECT * FROM finance_daily_summaries ORDER BY date DESC, rank ASC LIMIT 10`,
+    args: [],
   });
   return result.rows as unknown as FinanceDailySummary[];
 }
@@ -717,5 +858,12 @@ export async function getActiveFinanceCountdowns(): Promise<FinanceCountdown[]> 
     sql: `SELECT * FROM finance_countdowns WHERE is_active = 1 ORDER BY target_time DESC LIMIT 10`,
     args: [],
   });
+  if (result.rows.length === 0) {
+    const fallback = await db.execute({
+      sql: `SELECT * FROM finance_countdowns ORDER BY target_time DESC LIMIT 10`,
+      args: [],
+    });
+    return fallback.rows as unknown as FinanceCountdown[];
+  }
   return result.rows as unknown as FinanceCountdown[];
 }

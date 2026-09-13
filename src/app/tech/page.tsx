@@ -26,6 +26,7 @@ export default function TechPage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [dataDate, setDataDate] = useState<string | null>(null);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -41,11 +42,13 @@ export default function TechPage() {
     async (showToasts = false) => {
       try {
         setFetchError(null);
-        const today = formatDateKey(new Date());
-        const res = await fetch(`/api/tech?date=${today}&limit=50`);
+        const res = await fetch(`/api/tech?limit=50`);
         if (!res.ok) throw new Error(`Tech API returned ${res.status}`);
         const data = await res.json();
         const newUpdates = data.updates || [];
+        if (data.date) {
+          setDataDate(data.date);
+        }
 
         // Detect new updates
         if (
@@ -86,6 +89,9 @@ export default function TechPage() {
       const res = await fetch("/api/daily-tech");
       const data = await res.json();
       setDailySummaries(data.summaries || []);
+      if (data.date) {
+        setDataDate((prev) => prev || data.date);
+      }
     } catch (error) {
       console.error("Failed to fetch sidebar:", error);
     }
@@ -115,35 +121,6 @@ export default function TechPage() {
   useEffect(() => {
     fetchFeed();
     fetchSidebar();
-
-    // Auto-refresh every 5 minutes
-    let interval: NodeJS.Timeout;
-
-    const startInterval = () => {
-      interval = setInterval(() => {
-        fetchFeed(true);
-        fetchSidebar();
-        setLastRefresh(new Date());
-      }, 5 * 60 * 1000);
-    };
-
-    const handleVisibility = () => {
-      if (document.hidden) {
-        clearInterval(interval);
-      } else {
-        fetchFeed(true);
-        fetchSidebar();
-        startInterval();
-      }
-    };
-
-    startInterval();
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibility);
-    };
   }, [fetchFeed, fetchSidebar]);
 
   // Filter logic
@@ -178,12 +155,19 @@ export default function TechPage() {
     {} as Record<string, number>
   );
 
-  const todayDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const formattedDate = dataDate
+    ? new Date(dataDate + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -203,9 +187,14 @@ export default function TechPage() {
         {/* Top bar */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Tech <span className="text-gradient-cyan">News</span>
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold tracking-tight">
+                Tech <span className="text-gradient-cyan">News</span>
+              </h1>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+                Crons Paused
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
               AI • Cyber • Startups • Hardware • Software
             </p>
@@ -260,7 +249,7 @@ export default function TechPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           <div className="glass-card rounded-lg px-3 py-2.5 border border-white/5">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
-              Today&apos;s Updates
+              Recorded Updates
             </p>
             <p className="text-lg font-bold font-mono tabular-nums text-foreground mt-0.5">
               {updates.length}
@@ -383,8 +372,12 @@ export default function TechPage() {
         {/* Date pill */}
         <div className="flex items-center gap-3 mb-6">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          <span className="text-[11px] text-muted-foreground font-mono px-3 py-1 rounded-full border border-white/10 bg-white/5 whitespace-nowrap">
-            📅 {todayDate}
+          <span className="text-[11px] text-muted-foreground font-mono px-3 py-1 rounded-full border border-white/10 bg-white/5 whitespace-nowrap flex items-center gap-2">
+            <span>📅</span>
+            <span>{formattedDate}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 font-semibold">
+              Latest Snapshot
+            </span>
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
@@ -442,19 +435,18 @@ export default function TechPage() {
                     <span className="text-3xl">📡</span>
                   </div>
                   <h3 className="text-lg font-semibold mb-2">
-                    No Tech Updates Yet Today
+                    Tech Updates Paused
                   </h3>
                   <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-                    No tech news recorded yet today. Click &quot;Refresh Now&quot;
-                    to fetch the latest tech news, or wait for the next update.
+                    Automated workflows are paused to conserve API credits. Click &quot;Refresh Now&quot; to check the database for updates.
                   </p>
                   <button
                     onClick={triggerRefresh}
                     disabled={refreshing}
                     className="px-5 py-2.5 text-sm font-medium rounded-lg bg-cyan-500 text-white hover:bg-cyan-500/90 transition-all disabled:opacity-50 shadow-lg shadow-cyan-500/20"
-                    id="fetch-initial-tech-news"
+                    id="fetch-initial-news"
                   >
-                    {refreshing ? "Fetching..." : "⚡ Fetch Latest Tech News"}
+                    {refreshing ? "Fetching..." : "↻ Refresh Feed"}
                   </button>
                 </div>
               ) : (

@@ -1,8 +1,9 @@
 name: Hourly Updates (All Sectors)
 
 on:
-  schedule:
-    - cron: '0 * * * *' # Runs every hour at minute 0
+  # Paused to prevent API credit wastage - can still be triggered manually via workflow_dispatch
+  # schedule:
+  #   - cron: '0 * * * *' # Runs every hour at minute 0
   workflow_dispatch:
 
 jobs:

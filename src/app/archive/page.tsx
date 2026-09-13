@@ -41,7 +41,12 @@ export default function ArchivePage() {
     try {
       const res = await fetch("/api/dates");
       const data = await res.json();
-      setAvailableDates(data.dates || []);
+      const dates = data.dates || [];
+      setAvailableDates(dates);
+      if (dates.length > 0) {
+        const today = formatDateKey(new Date());
+        setSelectedDate((current) => (current === today && !dates.includes(today) ? dates[0] : current));
+      }
     } catch (error) {
       console.error("Failed to fetch dates:", error);
     } finally {
@@ -99,7 +104,11 @@ export default function ArchivePage() {
   };
 
   const jumpToToday = () => {
-    setSelectedDate(formatDateKey(new Date()));
+    if (availableDates.length > 0) {
+      setSelectedDate(availableDates[0]);
+    } else {
+      setSelectedDate(formatDateKey(new Date()));
+    }
   };
 
   // Generate calendar grid — show last 90 days

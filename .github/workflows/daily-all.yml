@@ -1,8 +1,9 @@
 name: Daily Summary (All Sectors)
 
 on:
-  schedule:
-    - cron: '0 2 * * *' # Runs at 02:00 UTC (07:30 AM IST) daily
+  # Paused to prevent API credit wastage - can still be triggered manually via workflow_dispatch
+  # schedule:
+  #   - cron: '0 2 * * *' # Runs at 02:00 UTC (07:30 AM IST) daily
   workflow_dispatch:
 
 jobs:

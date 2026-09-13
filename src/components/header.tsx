@@ -191,36 +191,24 @@ export function Header() {
           </div>
         </div>
 
-        {/* Center: LIVE indicator */}
+        {/* Center: Status indicator */}
         <div
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border backdrop-blur-md",
-            colors.border30, colors.bg5,
-            colors.glowShadow
-          )}
+          className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-amber-500/30 bg-amber-500/5 backdrop-blur-md shadow-[0_0_15px_rgba(245,158,11,0.1)]"
         >
           <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5 shrink-0">
-            <span className={cn("animate-pulse-live absolute inline-flex h-full w-full rounded-full opacity-75", colors.pulse)}></span>
-            <span className={cn("relative inline-flex rounded-full h-full w-full", colors.pulse, colors.shadow)}></span>
+            <span className="relative inline-flex rounded-full h-full w-full bg-amber-400"></span>
           </span>
-          <span className={cn("text-[10px] sm:text-[11px] font-bold uppercase tracking-widest font-mono", colors.text)}>
-            Live
+          <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider font-mono text-amber-400">
+            Paused • Snapshot Mode
           </span>
         </div>
 
         {/* Right Side: View Navigators */}
         <div className="flex items-center gap-2">
-          {/* Mobile LIVE indicator */}
-          <div
-            className={cn(
-              "flex md:hidden items-center gap-2 px-2 py-1.5 rounded-full border bg-opacity-5 mr-1",
-              colors.border30, colors.pulse
-            )}
-          >
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className={cn("animate-pulse-live absolute inline-flex h-full w-full rounded-full opacity-75", colors.pulse)}></span>
-              <span className={cn("relative inline-flex rounded-full h-full w-full", colors.pulse, colors.shadow)}></span>
-            </span>
+          {/* Mobile indicator */}
+          <div className="flex md:hidden items-center gap-1.5 px-2 py-1 rounded-full border border-amber-500/30 bg-amber-500/5 mr-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+            <span className="text-[9px] font-bold font-mono text-amber-400 uppercase">Paused</span>
           </div>
 
           <nav className="flex items-center gap-1 sm:gap-2">
@@ -233,7 +221,7 @@ export function Header() {
                   : "text-muted-foreground hover:text-white hover:bg-white/5 font-medium"
               )}
             >
-              <span className="hidden sm:inline">Live Feed</span>
+              <span className="hidden sm:inline">Latest Feed</span>
               <span className="sm:hidden">Feed</span>
             </Link>
             <Link

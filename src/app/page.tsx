@@ -52,6 +52,7 @@ export default function HomePage() {
   const [refreshing, setRefreshing] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(true);
+  const [dataDate, setDataDate] = useState<string | null>(null);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,11 +67,13 @@ export default function HomePage() {
   const fetchFeed = useCallback(async (showToasts = false) => {
     try {
       setFetchError(null);
-      const today = formatDateKey(new Date());
-      const res = await fetch(`/api/feed?date=${today}&limit=50`);
+      const res = await fetch(`/api/feed?limit=50`);
       if (!res.ok) throw new Error(`Feed API returned ${res.status}`);
       const data = await res.json();
       const newUpdates = data.updates || [];
+      if (data.date) {
+        setDataDate(data.date);
+      }
 
       // Detect new updates for toast
       if (showToasts && prevUpdateCountRef.current > 0 && newUpdates.length > prevUpdateCountRef.current) {
@@ -108,6 +111,9 @@ export default function HomePage() {
       const dailyData = await dailyRes.json();
       setCountdowns(countdownData.countdowns || []);
       setDailySummaries(dailyData.summaries || []);
+      if (dailyData.date) {
+        setDataDate((prev) => prev || dailyData.date);
+      }
     } catch (error) {
       console.error("Failed to fetch sidebar:", error);
     } finally {
@@ -134,30 +140,6 @@ export default function HomePage() {
     fetchFeed();
     fetchSidebar();
 
-    // Auto-refresh every 5 minutes, but pause when tab is backgrounded
-    let interval: NodeJS.Timeout;
-
-    const startInterval = () => {
-      interval = setInterval(() => {
-        fetchFeed(true);
-        fetchSidebar();
-        setLastRefresh(new Date());
-      }, 5 * 60 * 1000);
-    };
-
-    const handleVisibility = () => {
-      if (document.hidden) {
-        clearInterval(interval);
-      } else {
-        // Refresh immediately when tab becomes visible
-        fetchFeed(true);
-        startInterval();
-      }
-    };
-
-    startInterval();
-    document.addEventListener("visibilitychange", handleVisibility);
-
     // Online/offline detection
     const handleOnline = () => {
       setIsOnline(true);
@@ -166,15 +148,13 @@ export default function HomePage() {
     };
     const handleOffline = () => {
       setIsOnline(false);
-      addToast({ message: "You are offline. Updates paused.", severity: "BREAKING", duration: 8000 });
+      addToast({ message: "You are offline.", severity: "BREAKING", duration: 8000 });
     };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
     return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
@@ -244,12 +224,19 @@ export default function HomePage() {
   const diplomacyCount = updates.filter(
     (u) => u.severity === "DIPLOMACY"
   ).length;
-  const todayDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const formattedDate = dataDate
+    ? new Date(dataDate + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
 
   // Severity distribution percentages
   const total = updates.length || 1;
@@ -277,9 +264,14 @@ export default function HomePage() {
         {/* Top bar */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Live <span className="text-gradient-red">Updates</span>
-            </h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-2xl font-bold tracking-tight">
+                Live <span className="text-gradient-red">Updates</span>
+              </h1>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">
+                Crons Paused
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
               Global Conflicts • Hourly Intelligence Brief
             </p>
@@ -334,7 +326,7 @@ export default function HomePage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
           <div className="stat-card stat-card-updates glass-card rounded-lg px-3 py-2.5 border border-white/5 cursor-default">
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
-              Today&apos;s Updates
+              Recorded Updates
             </p>
             <p className="text-lg font-bold font-mono tabular-nums text-foreground mt-0.5">
               {updates.length}
@@ -435,8 +427,12 @@ export default function HomePage() {
         {/* Date pill */}
         <div className="flex items-center gap-3 mb-6">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-          <span className="text-[11px] text-muted-foreground font-mono px-3 py-1 rounded-full border border-white/10 bg-white/5 whitespace-nowrap">
-            📅 {todayDate}
+          <span className="text-[11px] text-muted-foreground font-mono px-3 py-1 rounded-full border border-white/10 bg-white/5 whitespace-nowrap flex items-center gap-2">
+            <span>📅</span>
+            <span>{formattedDate}</span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-breaking/10 text-breaking border border-breaking/20 font-semibold">
+              Latest Snapshot
+            </span>
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
         </div>
@@ -493,12 +489,10 @@ export default function HomePage() {
                     <span className="text-3xl">📡</span>
                   </div>
                   <h3 className="text-lg font-semibold mb-2">
-                    No Updates Yet Today
+                    Live Updates Paused
                   </h3>
                   <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">
-                    No developments recorded yet today. Click &quot;Refresh
-                    Now&quot; to fetch the latest news, or wait for the next
-                    hourly update.
+                    Automated workflows are paused to conserve API credits. Click &quot;Refresh Now&quot; to check the database for updates.
                   </p>
                   <button
                     onClick={triggerRefresh}
@@ -506,7 +500,7 @@ export default function HomePage() {
                     className="px-5 py-2.5 text-sm font-medium rounded-lg bg-breaking text-white hover:bg-breaking/90 transition-all disabled:opacity-50 shadow-lg shadow-breaking/20"
                     id="fetch-initial-news"
                   >
-                    {refreshing ? "Fetching..." : "⚡ Fetch Latest News"}
+                    {refreshing ? "Fetching..." : "↻ Refresh Feed"}
                   </button>
                 </div>
               ) : (
